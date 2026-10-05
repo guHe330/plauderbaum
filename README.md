@@ -18,6 +18,10 @@ A small local app for practising everyday conversations in a foreign language. Y
 
 > **Early and moving.** Expect a lot to change: features, file layout, the format of saved conversations. Updates may break things without a migration path.
 
+> **Your key, your cost, your responsibility.** The app uses your own API key. Everything it spends is billed to your account, and keeping that key safe is up to you. The app sets no spending limit. See [Cost](#cost) and [Your API key](#your-api-key).
+
+> **It is not offline.** Your conversations are sent to the AI provider you choose, and the lines that are read aloud go to Microsoft's voice service. See [What leaves your computer](#what-leaves-your-computer).
+
 ## What you need
 
 | | |
@@ -134,7 +138,7 @@ The keys are not written to a file: they are kept in the credential store of you
 
 To remove everything the app has stored, delete those two `Plauderbaum` folders and the *Plauderbaum* entries in the Credential Manager.
 
-What leaves your computer:
+### What leaves your computer
 
 - **To Anthropic or OpenRouter:** the scenario, the conversation so far and your new message, with every turn. With OpenRouter, the request is passed on to the provider of the model you chose.
 - **To Microsoft:** every line that is read aloud. The voices come from Microsoft's online text-to-speech service through the [`edge-tts`](https://github.com/rany2/edge-tts) library, which uses an unofficial interface and may stop working.
@@ -144,7 +148,25 @@ There is no telemetry and no account. The app's own server listens on `127.0.0.1
 
 ## Cost
 
-Each turn is one model call that carries the whole conversation so far. As a rough, unmeasured estimate, a long session with Claude Opus stays well under one US dollar, and Sonnet costs about half of that. *Other reply* and starting a conversation are one call each. The voices are free.
+**You pay for what the app uses.** Every model call is made with your API key and billed to your Anthropic or OpenRouter account at their prices. The author of this app has no part in that billing and takes no responsibility for what it costs you.
+
+Each turn is one model call that carries the whole conversation so far. *Other reply* and starting a conversation are one call each. The voices are free. As a rough, unmeasured estimate, a long session with Claude Opus stays well under one US dollar, and Sonnet costs about half of that. Other models on OpenRouter can cost much more or much less.
+
+The app does not count what it spends and has no limit of its own. To stay in control:
+
+- Set a spending limit or use prepaid credit in your provider's console, and check your usage there.
+- Create a key just for this app, so you can see what it uses and revoke it without affecting anything else.
+
+## Your API key
+
+**Keeping the key safe is your responsibility.** Whoever has it can spend your credit.
+
+- The app stores the key in your user account's credential store and sends it only to the provider it belongs to. The page never gets to see a stored key.
+- That does not protect it from other programs running under your user account. They can ask the credential store for the key, or use it through the app's local server while the app is open, which has no login.
+- Do not use the app on a computer or user account you share with people you would not give the key to.
+- If you think a key has leaked, revoke it in your provider's console and create a new one.
+
+More detail is in [SECURITY.md](SECURITY.md).
 
 ## How it works
 
