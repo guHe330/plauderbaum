@@ -24,10 +24,10 @@ function applySettings(settings) {
   const saved = "A key is saved. Leave this empty to keep it.";
   $("#key-status").textContent = settings.has_anthropic_key
     ? saved
-    : "Create one at console.anthropic.com. It is stored only on this computer.";
+    : "Create one at console.anthropic.com. It is kept in your system's credential store.";
   $("#openrouter-key-status").textContent = settings.has_openrouter_key
     ? saved
-    : "Create one at openrouter.ai/keys. It is stored only on this computer.";
+    : "Create one at openrouter.ai/keys. It is kept in your system's credential store.";
   const name = targetName();
   document.querySelectorAll(".lang-name").forEach((node) => { node.textContent = name; });
   $("#input").placeholder = `Answer in ${name}, or in your native language when you are stuck`;

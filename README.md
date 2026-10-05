@@ -53,7 +53,7 @@ Put the folder wherever you like. Nothing personal is stored in it.
 
 Double-click **`run.bat`**.
 
-The first start takes a minute: it creates a private Python environment in the folder `.venv` and installs the pinned dependencies from `requirements.txt` into it. Nothing is installed system-wide. After that the app opens in its own window.
+The first start takes a minute: it creates a private Python environment in the folder `.venv` and installs the pinned dependencies from `requirements.txt` into it. After an update that changes `requirements.txt`, the next start installs again. Nothing is installed system-wide. After that the app opens in its own window.
 
 If the setup fails, delete the `.venv` folder and start `run.bat` again.
 
@@ -117,11 +117,14 @@ Nothing personal is kept in the program folder.
 
 | What | Where |
 |---|---|
-| Settings, including the API keys | `%APPDATA%\Plauderbaum\settings.json` |
+| Settings | `%APPDATA%\Plauderbaum\settings.json` |
+| API keys | Windows Credential Manager, as *Plauderbaum* under *Windows Credentials* |
 | Saved conversations, one file each | `%APPDATA%\Plauderbaum\conversations\` |
 | Browser profile of the app window | `%LOCALAPPDATA%\Plauderbaum\browser-profile\` |
 
-The keys are stored as plain text in `settings.json`. To remove everything the app has stored, delete those two `Plauderbaum` folders.
+The keys are not written to a file: they are kept in the credential store of your user account and can be viewed or removed there (Control Panel → Credential Manager). A key from an earlier version that still sits in `settings.json` is moved over at the next start. Instead of saving a key you can set the environment variable `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`.
+
+To remove everything the app has stored, delete those two `Plauderbaum` folders and the *Plauderbaum* entries in the Credential Manager.
 
 What leaves your computer:
 
@@ -181,6 +184,7 @@ tutor/
     answer.py           parses and checks the model's answer
   models.py           the data exchanged with the page and saved to disk
   settings.py         the settings, their allowed values, their file
+  keychain.py         the API keys in the system's credential store
   conversations.py    saved conversations, one JSON file each
   speech.py           text-to-speech with a small cache
   window.py           finds Edge or Chrome and opens the app window
@@ -203,7 +207,7 @@ docs/screenshots/     the pictures in this README
 tools/                the shortcut script
 ```
 
-Dependencies are deliberately few: `fastapi` with `uvicorn` to serve it, `anthropic` for the Claude API, and `edge-tts` for the voices. OpenRouter is called with Python's standard library. The page uses no framework and no packages.
+Dependencies are deliberately few: `fastapi` with `uvicorn` to serve it, `anthropic` for the Claude API, `edge-tts` for the voices, and `keyring` for the credential store. OpenRouter is called with Python's standard library. The page uses no framework and no packages.
 
 ## Development
 

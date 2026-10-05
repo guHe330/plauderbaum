@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from . import roleplay
 from .conversations import ConversationStore
 from .errors import TutorError
+from .keychain import KeyStore, KeyStoreError, SystemKeyStore
 from .llm import openrouter
 from .models import Conversation, ReplyRequest, StartRequest, TurnRequest
 from .paths import APP_NAME, ASSETS, WEB
@@ -34,9 +35,17 @@ class FreshStaticFiles(StaticFiles):
         return response
 
 
-def create_app(data: Path) -> FastAPI:
-    """The app, keeping settings and conversations in the folder `data`."""
-    settings = SettingsStore(data / "settings.json")
+def create_app(data: Path, keys: KeyStore | None = None) -> FastAPI:
+    """The app, keeping settings and conversations in the folder `data`.
+
+    The API keys go to `keys`, by default the system's credential store.
+    """
+    settings = SettingsStore(data / "settings.json", keys or SystemKeyStore())
+    try:
+        settings.move_plaintext_keys()
+    except KeyStoreError:
+        # Without a usable credential store the keys stay where they are and keep working.
+        pass
     conversations = ConversationStore(data / "conversations")
 
     app = FastAPI(title=APP_NAME)
@@ -71,6 +80,8 @@ def settings_routes(settings: SettingsStore) -> APIRouter:
             return {"settings": settings.save(changes).public()}
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error))
+        except KeyStoreError as error:
+            raise HTTPException(status_code=500, detail=str(error))
 
     @router.get("/openrouter-models")
     def get_openrouter_models():

@@ -1,9 +1,15 @@
-"""User settings: what they are, which values are allowed, and how they are stored."""
+"""User settings: what they are, which values are allowed, and how they are stored.
+
+The API keys are part of the settings while the app runs, but they are kept in
+the system's credential store (see keychain.py), never in the settings file.
+"""
 
 import json
 import os
 from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
+
+from .keychain import KeyStore
 
 LANGUAGES = {
     "it": "Italian",
@@ -46,7 +52,7 @@ class Settings:
         return LANGUAGES[self.target_language]
 
     def key_for(self, provider: str) -> str:
-        """The API key for a provider: the saved one, else the environment variable."""
+        """The API key for a provider: the one from the key store, else the environment variable."""
         field, variable = PROVIDER_KEYS[provider]
         return getattr(self, field) or os.environ.get(variable, "")
 
@@ -87,32 +93,54 @@ def _checked(name: str, value: object) -> str | bool:
 
 
 class SettingsStore:
-    """Reads and writes the settings as one JSON file."""
+    """Reads and writes the settings: a JSON file, and the key store for the API keys."""
 
-    def __init__(self, file: Path):
+    def __init__(self, file: Path, keys: KeyStore):
         self._file = file
+        self._keys = keys
 
-    def load(self) -> Settings:
-        """The stored settings. Missing or unusable entries fall back to the defaults."""
+    def _read_file(self) -> dict:
         try:
             stored = json.loads(self._file.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
-            return DEFAULTS
-        if not isinstance(stored, dict):
-            return DEFAULTS
+            return {}
+        return stored if isinstance(stored, dict) else {}
+
+    def _write_file(self, settings: Settings) -> None:
+        public = {k: v for k, v in asdict(settings).items() if k not in SECRET_FIELDS}
+        self._file.parent.mkdir(parents=True, exist_ok=True)
+        self._file.write_text(json.dumps(public, indent=2), encoding="utf-8")
+
+    @staticmethod
+    def _plaintext_keys(stored: dict) -> dict[str, str]:
+        """Keys that an earlier version wrote into the settings file."""
+        return {
+            name: stored[name].strip()
+            for name in SECRET_FIELDS
+            if isinstance(stored.get(name), str) and stored[name].strip()
+        }
+
+    def load(self) -> Settings:
+        """The stored settings. Missing or unusable entries fall back to the defaults."""
+        stored = self._read_file()
         usable = {}
         for name, value in stored.items():
-            if name in FIELDS:
+            if name in FIELDS and name not in SECRET_FIELDS:
                 try:
                     usable[name] = _checked(name, value)
                 except ValueError:
                     pass
+        # A key still found in the file is used until it has been moved.
+        plaintext = self._plaintext_keys(stored)
+        for name in SECRET_FIELDS:
+            usable[name] = self._keys.get(name) or plaintext.get(name, "")
         return replace(DEFAULTS, **usable)
 
     def save(self, changes: dict) -> Settings:
         """Merge validated changes into the stored settings and return the result.
 
-        Unknown names are ignored. Raises ValueError for a value that is not allowed.
+        Unknown names are ignored. Raises ValueError for a value that is not
+        allowed, and KeyStoreError if a key cannot be put into the key store.
         """
         accepted = {}
         for name, value in changes.items():
@@ -123,7 +151,20 @@ class SettingsStore:
             if name in SECRET_FIELDS and not value:
                 continue
             accepted[name] = value
+        # The file is rewritten without keys below, so none may be left only there.
+        for name, value in self._plaintext_keys(self._read_file()).items():
+            if name not in accepted and not self._keys.get(name):
+                self._keys.set(name, value)
+        for name in SECRET_FIELDS & accepted.keys():
+            self._keys.set(name, accepted[name])
         settings = replace(self.load(), **accepted)
-        self._file.parent.mkdir(parents=True, exist_ok=True)
-        self._file.write_text(json.dumps(asdict(settings), indent=2), encoding="utf-8")
+        self._write_file(settings)
         return settings
+
+    def move_plaintext_keys(self) -> None:
+        """Move keys from the settings file of an earlier version into the key store.
+
+        Raises KeyStoreError if the key store refuses; the file then stays as it is.
+        """
+        if self._plaintext_keys(self._read_file()):
+            self.save({})

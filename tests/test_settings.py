@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from tutor.keychain import MemoryKeyStore
 from tutor.settings import DEFAULTS, Settings, SettingsStore
 
 
@@ -13,7 +14,8 @@ class SettingsStoreTest(unittest.TestCase):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         self.file = Path(folder.name) / "nested" / "settings.json"
-        self.store = SettingsStore(self.file)
+        self.keys = MemoryKeyStore()
+        self.store = SettingsStore(self.file, self.keys)
 
     def test_defaults_without_a_file(self):
         self.assertEqual(self.store.load(), DEFAULTS)
