@@ -1,0 +1,8 @@
+# The packages the app uses directly. After changing this file, regenerate the
+# pinned requirements.txt:
+#   pip install pip-tools
+#   pip-compile --generate-hashes --strip-extras requirements.in
+anthropic
+edge-tts
+fastapi
+uvicorn

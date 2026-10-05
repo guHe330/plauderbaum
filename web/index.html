@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plauderbaum</title>
+  <link rel="icon" href="/assets/icon.png">
+  <link rel="stylesheet" href="/web/style.css">
+</head>
+<body>
+  <header class="top">
+    <button id="home" class="brand" type="button" title="Back to the start page">
+      <img src="/assets/icon.png" alt="">
+      <span>Plauderbaum</span>
+    </button>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="tutor" aria-selected="true">Tutor</button>
+      <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="tab-tutor">
+      <div id="no-key" class="notice" hidden>
+        To start, add your API key in <a href="#" data-goto="settings">Settings</a>.
+      </div>
+
+      <div id="picker">
+        <h1>What shall we practise?</h1>
+        <p class="lead">Pick a situation. I play the other person; you answer in <span class="lang-name">Italian</span>, or in your native language when you are stuck.</p>
+        <div id="scenarios" class="scenarios"></div>
+        <form id="custom-form" class="custom">
+          <input id="custom-topic" type="text" maxlength="80" placeholder="Or your own topic, e.g. renting a bike" autocomplete="off">
+          <button type="submit" class="secondary">Start</button>
+        </form>
+        <div id="history" class="history" hidden>
+          <h2>Earlier conversations</h2>
+          <div id="history-list"></div>
+        </div>
+      </div>
+
+      <div id="session" hidden>
+        <div class="session-bar">
+          <div>
+            <div id="session-title" class="session-title"></div>
+            <div id="situation" class="situation"></div>
+          </div>
+          <button id="leave" class="secondary" type="button">← All conversations</button>
+        </div>
+        <div id="chat" class="chat" aria-live="polite"></div>
+        <form id="composer" class="composer">
+          <input id="input" type="text" maxlength="1000" autocomplete="off" spellcheck="false">
+          <button type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="tab-settings" hidden>
+      <h1>Settings</h1>
+      <form id="settings-form" class="settings">
+        <fieldset>
+          <legend>AI model</legend>
+          <label>Provider
+            <select name="provider">
+              <option value="anthropic">Anthropic (Claude, direct)</option>
+              <option value="openrouter">OpenRouter (any model)</option>
+            </select>
+          </label>
+          <div data-provider="anthropic">
+            <label>Anthropic API key
+              <input name="api_key" type="password" autocomplete="off" placeholder="sk-ant-…">
+              <small id="key-status"></small>
+            </label>
+            <label>Model
+              <select name="model"></select>
+            </label>
+          </div>
+          <div data-provider="openrouter" hidden>
+            <label>OpenRouter API key
+              <input name="openrouter_api_key" type="password" autocomplete="off" placeholder="sk-or-…">
+              <small id="openrouter-key-status"></small>
+            </label>
+            <label>Model
+              <input name="openrouter_model" type="text" list="openrouter-models" maxlength="100" autocomplete="off" spellcheck="false" placeholder="e.g. anthropic/claude-sonnet-5.5">
+              <datalist id="openrouter-models"></datalist>
+              <small>Any model id from openrouter.ai/models. Weaker models give weaker corrections.</small>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Learning</legend>
+          <label>I am learning
+            <select name="target_language"></select>
+          </label>
+          <label>My level
+            <select name="level">
+              <option value="A1">A1 – beginner</option>
+              <option value="A2">A2 – elementary</option>
+              <option value="B1">B1 – intermediate</option>
+              <option value="B2">B2 – upper intermediate</option>
+            </select>
+          </label>
+          <label>Corrections
+            <select name="strictness">
+              <option value="lenient">Lenient – small slips pass, with a note</option>
+              <option value="strict">Strict – repeat until it is correct</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Voice</legend>
+          <label>Tutor voice
+            <span class="row">
+              <select name="voice"></select>
+              <button type="button" id="test-voice" class="secondary">Test</button>
+            </span>
+          </label>
+          <label>Speed
+            <select name="speech_rate">
+              <option value="+0%">Normal</option>
+              <option value="-15%">Slower</option>
+              <option value="-30%">Slow</option>
+            </select>
+          </label>
+          <label class="check">
+            <input name="auto_speak" type="checkbox">
+            Read the tutor's lines aloud automatically
+          </label>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="/web/main.js"></script>
+</body>
+</html>

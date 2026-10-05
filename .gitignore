@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+# shortcut contains absolute paths; recreate with tools/make_shortcut.ps1
+*.lnk

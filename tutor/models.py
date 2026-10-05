@@ -1,0 +1,69 @@
+"""The data that travels between the page, the server and the saved files."""
+
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+Role = Literal["tutor", "learner"]
+
+
+class Scenario(BaseModel):
+    """What the role-play is about and who the tutor plays."""
+
+    title: str = Field(min_length=1, max_length=80)
+    brief: str = Field(max_length=500)
+
+
+class Line(BaseModel):
+    """One line of a conversation as the model gets to see it."""
+
+    role: Role
+    text: str = Field(max_length=2000)
+
+
+class StartRequest(BaseModel):
+    scenario: Scenario
+
+
+class TurnRequest(BaseModel):
+    scenario: Scenario
+    situation: str = Field(max_length=1000)
+    path: list[Line]
+    text: str = Field(min_length=1, max_length=1000)
+
+
+class ReplyRequest(BaseModel):
+    scenario: Scenario
+    situation: str = Field(max_length=1000)
+    path: list[Line]
+    existing: list[str] = Field(min_length=1)
+
+
+class Node(BaseModel):
+    """One line in a saved conversation tree."""
+
+    id: str = Field(min_length=1, max_length=20)
+    parent: str | None = Field(default=None, max_length=20)
+    role: Role
+    # For a learner line: the corrected form. `typed` is what they wrote.
+    text: str = Field(max_length=2000)
+    translation: str = Field(default="", max_length=2000)
+    typed: str = Field(default="", max_length=1000)
+    note: str = Field(default="", max_length=4000)
+    # A tutor line that closes the scene.
+    done: bool = False
+    # The child that was shown last, so that switching back to this branch
+    # continues where the learner left it.
+    pick: str | None = Field(default=None, max_length=20)
+
+
+class Conversation(BaseModel):
+    """A saved conversation: a tree of lines and the line it currently ends on."""
+
+    title: str = Field(min_length=1, max_length=80)
+    scenario: Scenario
+    situation: str = Field(max_length=1000)
+    target_language: str = Field(max_length=10)
+    created: str = Field(max_length=40)
+    nodes: list[Node] = Field(min_length=1)
+    active: str = Field(max_length=20)
