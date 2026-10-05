@@ -1,0 +1,25 @@
+name: Idea
+description: Something the app could do, or do better
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Plauderbaum is a personal tool that is shared as it is: ideas are welcome, but there is no promise that they will be built.
+  - type: textarea
+    id: situation
+    attributes:
+      label: What are you trying to do?
+      description: The situation while learning in which the app falls short. This helps more than a description of the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you manage at the moment?

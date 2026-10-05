@@ -239,6 +239,7 @@ web/
   navigation.js       tabs and pages
   api.js, dom.js, state.js   small shared helpers
 tests/                unit tests for both sides
+.github/              CI, the release and dependency-update workflows, issue forms
 docs/                 the banner and the screenshots in this README
 tools/                the shortcut script
 packaging/            builds the download package for a release

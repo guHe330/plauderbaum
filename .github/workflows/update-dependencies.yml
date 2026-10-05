@@ -1,0 +1,88 @@
+name: Update dependencies
+
+# Once a month: regenerate requirements.txt with the newest versions of all
+# Python packages, test them, and put the result on the branch deps/update.
+# An issue then links to a ready-made pull request. Opening that pull request
+# by hand is what makes CI run on it.
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # push the branch deps/update
+  issues: write     # open the issue that announces it
+
+jobs:
+  update:
+    # Windows, because requirements.txt must include the Windows-only packages.
+    runs-on: windows-latest
+    steps:
+      # Actions are pinned to full commit hashes; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Regenerate requirements.txt with the newest versions
+        run: |
+          python -m pip install --disable-pip-version-check pip-tools==7.6.1
+          python -m piptools compile --upgrade --generate-hashes --strip-extras --no-header --quiet --output-file requirements.txt requirements.in
+
+      - name: See whether anything changed
+        id: changes
+        shell: pwsh
+        run: |
+          git diff --quiet -- requirements.txt
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "All packages are up to date."
+            "changed=false" >> $env:GITHUB_OUTPUT
+          } else {
+            # the pinned lines that changed, old and new, for the issue text
+            $lines = git diff --unified=0 -- requirements.txt | Select-String '^[+-][a-z0-9_.-]+==' | ForEach-Object { $_.Line -replace ' \\$', '' }
+            $lines | Set-Content versions.txt
+            $lines
+            "changed=true" >> $env:GITHUB_OUTPUT
+          }
+          exit 0
+
+      - name: Install the new versions, checking their hashes
+        if: steps.changes.outputs.changed == 'true'
+        run: python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
+
+      - name: Python tests
+        if: steps.changes.outputs.changed == 'true'
+        run: python -m unittest discover -s tests
+
+      - name: Push the branch and announce it
+        if: steps.changes.outputs.changed == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B deps/update
+          git add requirements.txt
+          git commit -m "Update the pinned Python packages"
+          git push --force origin deps/update
+
+          $body = @(
+            "The monthly update found newer versions of the pinned Python packages. They install with hash checking and the Python tests pass on Windows.",
+            "",
+            "**[Open the pull request](https://github.com/$env:REPO/compare/main...deps/update?expand=1)** to let CI run on it, then merge.",
+            "",
+            "Changed pins (``-`` old, ``+`` new):",
+            "",
+            '```',
+            (Get-Content versions.txt -Raw).Trim(),
+            '```'
+          ) -join "`n"
+          $title = "Updated Python packages are ready"
+          $open = gh issue list --repo $env:REPO --state open --search "in:title `"$title`"" --json number --jq '.[0].number'
+          if ($open) {
+            gh issue edit $open --repo $env:REPO --body $body
+          } else {
+            gh issue create --repo $env:REPO --title $title --body $body
+          }

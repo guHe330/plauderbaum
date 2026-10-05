@@ -1,7 +1,9 @@
 # The packages the app uses directly. After changing this file, regenerate the
 # pinned requirements.txt:
 #   pip install pip-tools
-#   pip-compile --generate-hashes --strip-extras requirements.in
+#   pip-compile --generate-hashes --strip-extras --no-header requirements.in
+# Do this on Windows: the file must include the Windows-only packages.
+# .github/workflows/update-dependencies.yml does the same once a month.
 anthropic
 edge-tts
 fastapi

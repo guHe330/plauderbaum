@@ -1,0 +1,16 @@
+# Dependabot keeps the GitHub Actions current.
+#
+# The Python packages are not listed here on purpose: requirements.txt holds a
+# package that is only installed on Windows (pywin32-ctypes, for the credential
+# store), and Dependabot regenerates the file on Linux, which would drop it.
+# .github/workflows/update-dependencies.yml does that job on a Windows runner.
+# Dependabot still raises alerts for vulnerable Python packages.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

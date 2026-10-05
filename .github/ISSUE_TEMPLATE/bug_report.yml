@@ -1,0 +1,77 @@
+name: Bug report
+description: Something does not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Please do not paste API keys, and remove anything personal from conversations you include.
+        Security problems are reported privately, see the [security policy](https://github.com/guHe330/plauderbaum/security/policy).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead. A message shown by the app is most useful word for word.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a conversation in the scenario ...
+        2. Type ...
+        3. Click ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plauderbaum version
+      description: Shown at the bottom of the Settings tab.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: How did you get the app?
+      options:
+        - Zip from a release
+        - Cloned the repository
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Operating system
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider
+      options:
+        - Anthropic
+        - OpenRouter
+        - Not relevant
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: Especially for OpenRouter, the model id from Settings.
+      placeholder: anthropic/claude-sonnet-5.5
+  - type: input
+    id: language
+    attributes:
+      label: Language you are learning and level
+      placeholder: Italian, A2
+  - type: textarea
+    id: console
+    attributes:
+      label: Output of the console window
+      description: If the app did not start or closed by itself, the text in the black window that run.bat opens.
+      render: text
