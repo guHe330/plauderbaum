@@ -1,5 +1,11 @@
 # Plauderbaum
 
+[![CI](https://github.com/guHe330/plauderbaum/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/guHe330/plauderbaum/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/guHe330/plauderbaum)](https://github.com/guHe330/plauderbaum/releases/latest)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+[![Platform: Windows 10 | 11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d4.svg)](#what-you-need)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776ab.svg?logo=python&logoColor=white)](#what-you-need)
+
 ![Plauderbaum: practise everyday conversations in a foreign language with an AI tutor. Answer, get corrected, rewind, branch out.](docs/banner.png)
 
 A small local app for practising everyday conversations in a foreign language. You pick a situation (bakery, hotel, train station, or a topic of your own), an AI model plays the other person, and you type your side. The tutor's lines are read aloud.
