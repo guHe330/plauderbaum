@@ -4,7 +4,7 @@ Plauderbaum runs on your own computer, keeps your API keys in your system's cred
 
 ## Supported versions
 
-Only the latest state of the `main` branch is maintained. There are no releases and no backports yet.
+Only the latest release is maintained. There are no backports.
 
 ## Reporting a vulnerability
 
@@ -16,7 +16,7 @@ What to expect:
 
 - This is a one-person spare-time project whose code is written by an AI agent: response is **best effort**, typically within a couple of weeks.
 - There is **no bug bounty**.
-- Confirmed vulnerabilities are fixed on `main`, with credit in the commit message unless you prefer otherwise.
+- Confirmed vulnerabilities are fixed in the next release, with credit in the release notes unless you prefer otherwise.
 
 ## How the app is built, as far as it matters for security
 

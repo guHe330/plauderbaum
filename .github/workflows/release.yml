@@ -1,0 +1,64 @@
+name: Release
+
+# Pushing a tag vX.Y.Z publishes a release with the download package
+# Plauderbaum_X.Y.Z.zip. The tag must match __version__ in tutor/__init__.py.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write       # create the release
+  id-token: write       # build provenance attestation
+  attestations: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      # Actions are pinned to full commit hashes; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+
+      - name: Check that the tag matches the version in the code
+        id: version
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # tutor/__init__.py is the single source of truth, so a release
+          # cannot ship a package that reports a different version.
+          $version = python -c "import tutor; print(tutor.__version__)"
+          if ($env:TAG -ne "v$version") {
+            throw "Tag $env:TAG does not match __version__ ($version). Bump tutor/__init__.py before tagging."
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Install the pinned dependencies, checking their hashes
+        run: python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
+      - name: Python tests
+        run: python -m unittest discover -s tests
+      - name: JavaScript tests
+        run: node --test
+
+      - name: Build the package
+        run: python packaging/make_zip.py dist
+
+      - name: Attest where the package was built
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/Plauderbaum_${{ steps.version.outputs.version }}.zip
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create $env:TAG "dist/Plauderbaum_$env:VERSION.zip" `
+            --title "Plauderbaum $env:VERSION" --generate-notes --verify-tag

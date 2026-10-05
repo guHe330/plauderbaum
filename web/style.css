@@ -268,6 +268,7 @@ input[type="text"], input[type="password"], select {
 .settings .check { display: flex; align-items: center; gap: 10px; font-weight: 400; font-size: 1rem; }
 .settings .check input { width: 18px; height: 18px; accent-color: var(--green); }
 .settings .actions { margin: 20px 0 8px; }
+.version { color: var(--muted); font-size: .85rem; margin: 16px 0 0; }
 
 .toast {
   position: fixed;

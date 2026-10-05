@@ -1,5 +1,7 @@
 # Plauderbaum
 
+![Plauderbaum: practise everyday conversations in a foreign language with an AI tutor. Answer, get corrected, rewind, branch out.](docs/banner.png)
+
 A small local app for practising everyday conversations in a foreign language. You pick a situation (bakery, hotel, train station, or a topic of your own), an AI model plays the other person, and you type your side. The tutor's lines are read aloud.
 
 - **Corrections instead of a chat.** Every message is judged before the conversation moves on. If it has errors, you see how to say it and try again.
@@ -41,13 +43,15 @@ Both install the `py` launcher that `run.bat` uses.
 
 ### 2. Get the app
 
-Download this repository (green **Code** button → **Download ZIP**, then unpack it), or clone it:
+Download `Plauderbaum_<version>.zip` from the [latest release](https://github.com/guHe330/plauderbaum/releases/latest) and unpack it. It contains only what is needed to run the app, in one folder named after the version.
+
+Put the folder wherever you like. Nothing personal is stored in it.
+
+To work on the code, or to get the newest state between releases, clone the repository instead:
 
 ```
 git clone https://github.com/guHe330/plauderbaum.git
 ```
-
-Put the folder wherever you like. Nothing personal is stored in it.
 
 ### 3. Run it
 
@@ -72,6 +76,10 @@ This creates `Plauderbaum.lnk` in the app folder. Move it to the desktop or pin 
 ### Stopping
 
 Close the app window. The local server stops with it.
+
+### Updating
+
+Download the newer zip, unpack it into a folder of its own and start it there. Settings and conversations are kept outside the app folder (see [Where your data is](#where-your-data-is)), so they carry over and the old folder can be deleted. The version you are running is shown at the bottom of the Settings tab.
 
 ## Using it
 
@@ -203,8 +211,9 @@ web/
   navigation.js       tabs and pages
   api.js, dom.js, state.js   small shared helpers
 tests/                unit tests for both sides
-docs/screenshots/     the pictures in this README
+docs/                 the banner and the screenshots in this README
 tools/                the shortcut script
+packaging/            builds the download package for a release
 ```
 
 Dependencies are deliberately few: `fastapi` with `uvicorn` to serve it, `anthropic` for the Claude API, `edge-tts` for the voices, and `keyring` for the credential store. OpenRouter is called with Python's standard library. The page uses no framework and no packages.
@@ -221,6 +230,17 @@ node --test
 The Python tests cover settings, conversation storage, answer parsing, provider error handling and the prompts, without calling a model. The JavaScript tests cover the conversation tree and need Node.js 22 or newer; the app itself does not need Node.
 
 To start without `run.bat`: `.venv\Scripts\python.exe -m tutor`.
+
+### Releases
+
+Versions are numbered `major.minor.patch`. While the major number is 0, any release may change the format of saved conversations or the settings.
+
+The version is written down in one place, `__version__` in `tutor/__init__.py`. To publish a release:
+
+1. Change `__version__` and commit.
+2. Tag that commit `v<version>`, for example `v0.1.0`, and push the tag.
+
+The [release workflow](.github/workflows/release.yml) refuses a tag that does not match `__version__`, runs the tests, builds `Plauderbaum_<version>.zip` with `packaging/make_zip.py`, attests where it was built and attaches it to a new GitHub release. To build the same zip locally: `python packaging/make_zip.py`, which writes to `dist/`.
 
 ## Other platforms
 

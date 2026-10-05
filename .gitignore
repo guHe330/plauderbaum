@@ -1,4 +1,6 @@
 .venv/
+# download packages built by packaging/make_zip.py
+dist/
 __pycache__/
 *.pyc
 node_modules/

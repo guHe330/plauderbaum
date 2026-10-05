@@ -13,7 +13,7 @@ from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import roleplay
+from . import __version__, roleplay
 from .conversations import ConversationStore
 from .errors import TutorError
 from .keychain import KeyStore, KeyStoreError, SystemKeyStore
@@ -48,7 +48,7 @@ def create_app(data: Path, keys: KeyStore | None = None) -> FastAPI:
         pass
     conversations = ConversationStore(data / "conversations")
 
-    app = FastAPI(title=APP_NAME)
+    app = FastAPI(title=APP_NAME, version=__version__)
     app.mount("/web", FreshStaticFiles(directory=WEB), name="web")
     app.mount("/assets", StaticFiles(directory=ASSETS), name="assets")
     app.include_router(settings_routes(settings), prefix="/api")
@@ -72,7 +72,12 @@ def settings_routes(settings: SettingsStore) -> APIRouter:
 
     @router.get("/settings")
     def get_settings():
-        return {"settings": settings.load().public(), "languages": LANGUAGES, "models": MODELS}
+        return {
+            "settings": settings.load().public(),
+            "languages": LANGUAGES,
+            "models": MODELS,
+            "version": __version__,
+        }
 
     @router.post("/settings")
     def post_settings(changes: dict):
