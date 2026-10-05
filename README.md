@@ -286,3 +286,5 @@ See [SECURITY.md](SECURITY.md) for how to report a problem.
 ## License
 
 Plauderbaum is free software under the GNU General Public License, version 3 or (at your option) any later version. See [LICENSE](LICENSE). It comes without any warranty.
+
+Happy learning!

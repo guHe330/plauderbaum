@@ -1,12 +1,30 @@
 name: CI
 
+# Runs when code changes, not for documentation. It can also be started by
+# hand from the Actions tab.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+# A newer push to the same branch makes the run for the older one pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
