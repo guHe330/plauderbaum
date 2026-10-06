@@ -51,6 +51,16 @@ class Settings:
     def target_language_name(self) -> str:
         return LANGUAGES[self.target_language]
 
+    def for_conversation(self, target_language: str | None, level: str | None) -> "Settings":
+        """These settings, with the language and level a conversation was started in.
+
+        A conversation keeps both for as long as it lives, whatever Settings say
+        later. Values that are not given stay as they are. Raises ValueError for
+        a value that is not allowed.
+        """
+        own = {"target_language": target_language, "level": level}
+        return replace(self, **{name: _checked(name, value) for name, value in own.items() if value})
+
     def key_for(self, provider: str) -> str:
         """The API key for a provider: the one from the key store, else the environment variable."""
         field, variable = PROVIDER_KEYS[provider]

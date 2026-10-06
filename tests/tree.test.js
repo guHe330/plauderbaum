@@ -10,6 +10,8 @@ function start() {
     scenario: { title: "Bakery", brief: "The tutor plays the baker." },
     situation: "You are at a bakery.",
     targetLanguage: "it",
+    level: "A2",
+    voice: "it-IT-IsabellaNeural",
     created: "2026-10-05T10:00:00.000Z",
     text: "Buongiorno!",
     translation: "Good morning!",
@@ -31,6 +33,8 @@ test("a new conversation ends on the opening line", () => {
   assert.deepEqual(texts(tree.activePath), ["Buongiorno!"]);
   assert.equal(tree.title, "Bakery");
   assert.equal(tree.targetLanguage, "it");
+  assert.equal(tree.level, "A2");
+  assert.equal(tree.voice, "it-IT-IsabellaNeural");
   assert.equal(tree.done, false);
 });
 
@@ -113,6 +117,16 @@ test("a saved tree comes back as it was", () => {
   const reopened = new ConversationTree(JSON.parse(JSON.stringify(tree)));
   assert.deepEqual(texts(reopened.activePath), ["Buongiorno!", "Un pane.", "Quale?"]);
   assert.equal(reopened.id, tree.id);
+});
+
+test("a tree saved before level and voice were recorded has neither", () => {
+  const doc = JSON.parse(JSON.stringify(start()));
+  delete doc.level;
+  doc.voice = "";
+  const tree = new ConversationTree(doc);
+  assert.equal(tree.level, null);
+  assert.equal(tree.voice, null);
+  assert.equal(tree.targetLanguage, "it");
 });
 
 test("a saved tree without a usable end opens on its last branch", () => {

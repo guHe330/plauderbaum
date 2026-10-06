@@ -9,7 +9,7 @@
 
 export class ConversationTree {
   // `doc` is the conversation as it is saved:
-  // {id, title, scenario, situation, target_language, created, nodes, active}
+  // {id, title, scenario, situation, target_language, level, voice, created, nodes, active}
   // with nodes [{id, parent, role, text, translation, typed, note, done, pick}].
   constructor(doc) {
     this.doc = doc;
@@ -17,13 +17,15 @@ export class ConversationTree {
   }
 
   // A new conversation that starts with the tutor's opening line.
-  static start({ id, scenario, situation, targetLanguage, created, text, translation }) {
+  static start({ id, scenario, situation, targetLanguage, level, voice, created, text, translation }) {
     const doc = {
       id,
       title: scenario.title,
       scenario,
       situation,
       target_language: targetLanguage,
+      level,
+      voice,
       created,
       nodes: [{ id: "n1", parent: null, role: "tutor", text, translation }],
       active: "n1",
@@ -35,7 +37,12 @@ export class ConversationTree {
   get title() { return this.doc.title; }
   get scenario() { return this.doc.scenario; }
   get situation() { return this.doc.situation; }
+  // The language, level and voice the conversation was started with. It keeps
+  // them, whatever is set in Settings later. Level and voice are missing in
+  // conversations saved before they were recorded.
   get targetLanguage() { return this.doc.target_language; }
+  get level() { return this.doc.level || null; }
+  get voice() { return this.doc.voice || null; }
 
   node(id) {
     return this.doc.nodes.find((node) => node.id === id);

@@ -3,7 +3,7 @@ import { api } from "./api.js";
 import { $, el, linkButton, toast } from "./dom.js";
 import { showPage, showTab } from "./navigation.js";
 import { openConversation, startConversation } from "./session.js";
-import { say } from "./speech.js";
+import { say, setConversationVoice } from "./speech.js";
 import { state } from "./state.js";
 import { deleteConversation, listConversations } from "./store.js";
 
@@ -11,6 +11,7 @@ import { deleteConversation, listConversations } from "./store.js";
 export function showHome() {
   if (state.busy) return;
   say();
+  setConversationVoice(null);
   showTab("tutor");
   showPage("home");
   loadConversations();

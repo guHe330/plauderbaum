@@ -1,7 +1,7 @@
 // The Settings tab.
 import { api } from "./api.js";
 import { $, toast } from "./dom.js";
-import { say } from "./speech.js";
+import { sayIn } from "./speech.js";
 import { state, targetName } from "./state.js";
 
 const form = $("#settings-form");
@@ -30,7 +30,6 @@ function applySettings(settings) {
     : "Create one at openrouter.ai/keys. It is kept in your system's credential store.";
   const name = targetName();
   document.querySelectorAll(".lang-name").forEach((node) => { node.textContent = name; });
-  $("#input").placeholder = `Answer in ${name}, or in your native language when you are stuck`;
 }
 
 async function loadVoices(language, selected) {
@@ -118,7 +117,7 @@ form.addEventListener("submit", async (event) => {
 $("#test-voice").addEventListener("click", async () => {
   try {
     await saveSettings();
-    say(TEST_PHRASES[state.settings.target_language]);
+    sayIn(state.settings.voice, TEST_PHRASES[state.settings.target_language]);
   } catch (error) {
     toast(error.message, true);
   }

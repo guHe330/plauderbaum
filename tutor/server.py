@@ -8,7 +8,7 @@ path of the conversation with every turn and stores the tree through
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi import Path as PathParam
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -18,9 +18,9 @@ from .conversations import ConversationStore
 from .errors import TutorError
 from .keychain import KeyStore, KeyStoreError, SystemKeyStore
 from .llm import openrouter
-from .models import Conversation, ReplyRequest, StartRequest, TurnRequest
+from .models import Conversation, ConversationRequest, ReplyRequest, StartRequest, TurnRequest
 from .paths import APP_NAME, ASSETS, WEB
-from .settings import LANGUAGES, MODELS, SettingsStore
+from .settings import LANGUAGES, MODELS, Settings, SettingsStore
 from .speech import Speech
 
 ConversationId = Annotated[str, PathParam(pattern=r"^[0-9a-f-]{36}$")]
@@ -109,13 +109,14 @@ def speech_routes(settings: SettingsStore, speech: Speech) -> APIRouter:
             raise HTTPException(status_code=502, detail="Could not load the voice list. Check your internet connection.")
 
     @router.get("/tts")
-    async def tts(text: str):
+    async def tts(text: str, voice: Annotated[str | None, Query(pattern=r"^[A-Za-z0-9-]{1,80}$")] = None):
+        """Audio for a line, in the given voice or else the one chosen in Settings."""
         text = text.strip()[:1000]
         if not text:
             raise HTTPException(status_code=400, detail="Nothing to say.")
         current = settings.load()
         try:
-            audio = await speech.synthesize(text, current.voice, current.speech_rate)
+            audio = await speech.synthesize(text, voice or current.voice, current.speech_rate)
         except Exception:
             raise HTTPException(status_code=502, detail="The voice service did not answer.")
         return Response(content=audio, media_type="audio/mpeg")
@@ -125,6 +126,13 @@ def speech_routes(settings: SettingsStore, speech: Speech) -> APIRouter:
 
 def roleplay_routes(settings: SettingsStore) -> APIRouter:
     router = APIRouter()
+
+    def settings_for(request: ConversationRequest) -> Settings:
+        """The current settings, with the conversation's own language and level."""
+        try:
+            return settings.load().for_conversation(request.target_language, request.level)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error))
 
     @router.get("/scenarios")
     def get_scenarios():
@@ -137,7 +145,7 @@ def roleplay_routes(settings: SettingsStore) -> APIRouter:
     @router.post("/turn")
     def turn(request: TurnRequest):
         return roleplay.judge_turn(
-            settings.load(), request.scenario, request.situation, request.path, request.text,
+            settings_for(request), request.scenario, request.situation, request.path, request.text,
         )
 
     @router.post("/reply")
@@ -145,7 +153,7 @@ def roleplay_routes(settings: SettingsStore) -> APIRouter:
         if request.path and request.path[-1].role != "learner":
             raise HTTPException(status_code=400, detail="There is no learner line to reply to.")
         return roleplay.other_reply(
-            settings.load(), request.scenario, request.situation, request.path, request.existing,
+            settings_for(request), request.scenario, request.situation, request.path, request.existing,
         )
 
     return router

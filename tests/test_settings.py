@@ -77,6 +77,23 @@ class SettingsTest(unittest.TestCase):
             self.assertEqual(Settings(openrouter_api_key="saved").key_for("openrouter"), "saved")
             self.assertEqual(Settings().key_for("anthropic"), "")
 
+    def test_a_conversation_keeps_its_own_language_and_level(self):
+        current = Settings(target_language="es", level="B2", strictness="strict")
+        own = current.for_conversation("it", "A1")
+        self.assertEqual((own.target_language, own.level), ("it", "A1"))
+        self.assertEqual(own.strictness, "strict")  # everything else stays as set
+
+    def test_a_conversation_without_its_own_values_uses_the_settings(self):
+        current = Settings(target_language="es", level="B2")
+        self.assertEqual(current.for_conversation(None, None), current)
+        self.assertEqual(current.for_conversation("it", "").level, "B2")
+
+    def test_a_conversation_cannot_bring_values_that_are_not_allowed(self):
+        with self.assertRaises(ValueError):
+            Settings().for_conversation("xx", None)
+        with self.assertRaises(ValueError):
+            Settings().for_conversation(None, "C3")
+
     def test_target_language_name(self):
         self.assertEqual(Settings(target_language="fr").target_language_name, "French")
 

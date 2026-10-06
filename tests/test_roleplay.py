@@ -32,6 +32,14 @@ class PromptTest(unittest.TestCase):
             self.assertIn(expected, system)
         self.assertIs(schema, roleplay.OPENING_SCHEMA)
 
+    def test_a_turn_is_judged_in_the_conversations_own_language_and_level(self):
+        settings = Settings(target_language="es", level="B2").for_conversation("it", "A1")
+        roleplay.judge_turn(settings, BAKERY, "You are at a bakery.", PATH, "il pane integrale")
+        system, _user, _schema = self.sent()
+        self.assertIn("Italian tutor", system)
+        self.assertIn("CEFR level A1", system)
+        self.assertNotIn("Spanish", system)
+
     def test_turn_shows_the_path_and_the_new_message(self):
         roleplay.judge_turn(Settings(), BAKERY, "You are at a bakery.", PATH, "il pane integrale")
         _system, user, schema = self.sent()

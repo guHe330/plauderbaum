@@ -120,12 +120,14 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
 | Model (Anthropic) | Claude Opus 5.5, Claude Sonnet 5.5 | Opus gives the best corrections. Sonnet is faster and cheaper. |
 | OpenRouter API key | | Used when the provider is OpenRouter. |
 | Model (OpenRouter) | any model id | Suggestions come from OpenRouter's list of models that support structured output. Weaker models give weaker corrections, and some cannot produce the answer format at all. |
-| I am learning | Italian, Spanish, French, Portuguese, English, German | The language of the role-play. Changing it also reloads the list of voices. |
-| My level | A1, A2, B1, B2 | How simple the other person's lines and the suggested sentences are. |
+| I am learning | Italian, Spanish, French, Portuguese, English, German | The language of new conversations. Changing it also reloads the list of voices. |
+| My level | A1, A2, B1, B2 | How simple the other person's lines and the suggested sentences are, in new conversations. |
 | Corrections | Lenient, Strict | Lenient lets small slips pass with a note. Strict makes you repeat the sentence until it is correct. |
 | Tutor voice | voices for the chosen language | *Test* plays a sample. |
 | Speed | Normal, Slower, Slow | Speaking rate of the voice. |
 | Read aloud automatically | on, off | Whether new lines are spoken without pressing *Listen*. |
+
+A conversation keeps the language and the level it was started with. You can change both in Settings and still continue an older conversation as it was: it is judged in its own language at its own level. If its language differs from the one in Settings, it is also read with the voice it was started with.
 
 Instead of saving a key in Settings you can set the environment variable `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`. A saved key takes precedence.
 
@@ -283,7 +285,6 @@ The [release workflow](.github/workflows/release.yml) refuses a tag that does no
 
 - You type; there is no speech input and no feedback on pronunciation.
 - The interface, the explanations and the translations are in English only.
-- Continuing a saved conversation uses the language currently set in Settings, not the one it was started in.
 - Saved conversations have no version number yet, so a later change of the format may make old ones unreadable.
 
 ## Security

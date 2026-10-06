@@ -4,8 +4,8 @@ import { api } from "./api.js";
 import { createChatView } from "./chat-view.js";
 import { $, toast } from "./dom.js";
 import { sessionOpen, showPage } from "./navigation.js";
-import { autoSay, say } from "./speech.js";
-import { state, targetName } from "./state.js";
+import { autoSay, say, setConversationVoice } from "./speech.js";
+import { state } from "./state.js";
 import { loadConversation, saveConversation } from "./store.js";
 import { ConversationTree } from "./tree.js";
 
@@ -28,17 +28,44 @@ function setBusy(busy) {
   if (!closed && sessionOpen()) input.focus();
 }
 
-function show(tree) {
+function languageName(tree) {
+  return state.languages[tree.targetLanguage] || tree.targetLanguage;
+}
+
+// The voice for a conversation in another language than the one set in
+// Settings: the one it was started with, or else the first for its language.
+// For a conversation in the Settings language: null, the voice chosen there.
+async function voiceFor(tree) {
+  if (tree.targetLanguage === state.settings.target_language) return null;
+  if (tree.voice) return tree.voice;
+  try {
+    const voices = await api(`/api/voices?lang=${encodeURIComponent(tree.targetLanguage)}`);
+    return voices.length ? voices[0].id : null;
+  } catch {
+    return null;
+  }
+}
+
+function show(tree, voice) {
   state.tree = tree;
+  setConversationVoice(voice);
   $("#session-title").textContent = tree.title;
   $("#situation").textContent = tree.situation;
+  input.placeholder = `Answer in ${languageName(tree)}, or in your native language when you are stuck`;
   showPage("session");
   view.renderPath(tree);
 }
 
-// The lines down to `node` as the server wants them for a model call.
-function linesTo(tree, node) {
-  return tree.pathTo(node).map(({ role, text }) => ({ role, text }));
+// What every model call for this conversation carries: the scenario, the lines
+// down to `node`, and the language and level the conversation was started in.
+function modelRequest(tree, node) {
+  return {
+    scenario: tree.scenario,
+    situation: tree.situation,
+    path: tree.pathTo(node).map(({ role, text }) => ({ role, text })),
+    target_language: tree.targetLanguage,
+    level: tree.level,
+  };
 }
 
 export async function startConversation(scenario) {
@@ -52,12 +79,14 @@ export async function startConversation(scenario) {
       scenario,
       situation: opening.situation,
       targetLanguage: state.settings.target_language,
+      level: state.settings.level,
+      voice: state.settings.voice,
       created: new Date().toISOString(),
       text: opening.tutor_line,
       translation: opening.translation,
     });
     saveConversation(tree);
-    show(tree);
+    show(tree, null);
     autoSay(tree.active.text);
   } catch (error) {
     toast(error.message, true);
@@ -72,11 +101,7 @@ export async function openConversation(id) {
   setBusy(true);
   try {
     const tree = await loadConversation(id);
-    show(tree);
-    if (tree.targetLanguage !== state.settings.target_language) {
-      const name = state.languages[tree.targetLanguage] || tree.targetLanguage;
-      toast(`This conversation is in ${name}. Switch "I am learning" in Settings to continue it.`, true);
-    }
+    show(tree, await voiceFor(tree));
     return true;
   } catch (error) {
     toast(error.message, true);
@@ -92,12 +117,7 @@ async function sendMessage(text) {
   const attempt = view.addAttempt(text);
   setBusy(true);
   try {
-    const result = await api("/api/turn", {
-      scenario: tree.scenario,
-      situation: tree.situation,
-      path: linesTo(tree, current),
-      text,
-    });
+    const result = await api("/api/turn", { ...modelRequest(tree, current), text });
     view.setThinking(false);
     if (result.verdict === "ok") {
       const learner = tree.addLearnerLine(current, {
@@ -117,7 +137,7 @@ async function sendMessage(text) {
       autoSay(tutor.text);
     } else {
       // the tree stays where it was, the learner tries this turn again
-      view.addCorrection(attempt, result, targetName());
+      view.addCorrection(attempt, result, languageName(tree));
       autoSay(result.ideal);
     }
   } catch (error) {
@@ -140,9 +160,7 @@ async function otherReply(node) {
   setBusy(true);
   try {
     const result = await api("/api/reply", {
-      scenario: tree.scenario,
-      situation: tree.situation,
-      path: linesTo(tree, learner),
+      ...modelRequest(tree, learner),
       existing: tree.siblingsOf(node).map((sibling) => sibling.text),
     });
     const tutor = tree.addTutorLine(learner, {
