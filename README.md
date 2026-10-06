@@ -5,6 +5,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![Platform: Windows 10 | 11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d4.svg)](#what-you-need)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-3776ab.svg?logo=python&logoColor=white)](#what-you-need)
+[![Code: 100% agentic](https://img.shields.io/badge/code-100%25%20agentic-8FD9B6.svg)](CONTRIBUTING.md#good-to-know)
 
 ![Plauderbaum: practise everyday conversations in a foreign language with an AI tutor. Answer, get corrected, rewind, branch out.](docs/banner.png)
 
