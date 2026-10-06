@@ -25,17 +25,25 @@ class StartRequest(BaseModel):
     scenario: Scenario
 
 
-class TurnRequest(BaseModel):
+class ConversationRequest(BaseModel):
+    """A model call for an existing conversation.
+
+    The page sends the language and level the conversation was started in;
+    without them the current settings apply.
+    """
+
     scenario: Scenario
     situation: str = Field(max_length=1000)
     path: list[Line]
+    target_language: str | None = Field(default=None, max_length=10)
+    level: str | None = Field(default=None, max_length=10)
+
+
+class TurnRequest(ConversationRequest):
     text: str = Field(min_length=1, max_length=1000)
 
 
-class ReplyRequest(BaseModel):
-    scenario: Scenario
-    situation: str = Field(max_length=1000)
-    path: list[Line]
+class ReplyRequest(ConversationRequest):
     existing: list[str] = Field(min_length=1)
 
 
@@ -64,6 +72,10 @@ class Conversation(BaseModel):
     scenario: Scenario
     situation: str = Field(max_length=1000)
     target_language: str = Field(max_length=10)
+    # The level and the voice it was started with. Empty in files from before
+    # these were recorded.
+    level: str = Field(default="", max_length=10)
+    voice: str = Field(default="", max_length=80)
     created: str = Field(max_length=40)
     nodes: list[Node] = Field(min_length=1)
     active: str = Field(max_length=20)
