@@ -17,6 +17,18 @@ class VersionTest(unittest.TestCase):
         self.assertRegex(tutor.__version__, r"^\d+\.\d+\.\d+$")
 
 
+class ThirdPartyListTest(unittest.TestCase):
+    def test_readme_lists_every_package_the_app_imports(self):
+        root = Path(__file__).resolve().parent.parent
+        direct = [
+            line.strip() for line in (root / "requirements.in").read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+        section = readme[readme.index("## Third-party software and services"):readme.index("## License")]
+        self.assertEqual([name for name in direct if f"| [{name}](" not in section], [])
+
+
 class PackageTest(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
