@@ -70,11 +70,21 @@
           <legend>AI model</legend>
           <label>Provider
             <select name="provider">
+              <option value="cursor">Cursor (local agent)</option>
               <option value="anthropic">Anthropic (Claude, direct)</option>
               <option value="openrouter">OpenRouter (any model)</option>
             </select>
           </label>
-          <div data-provider="anthropic">
+          <div data-provider="cursor">
+            <label>Cursor API key
+              <input name="cursor_api_key" type="password" autocomplete="off" placeholder="cursor_…">
+              <small id="cursor-key-status"></small>
+            </label>
+            <label>Model
+              <select name="cursor_model"></select>
+            </label>
+          </div>
+          <div data-provider="anthropic" hidden>
             <label>Anthropic API key
               <input name="api_key" type="password" autocomplete="off" placeholder="sk-ant-…">
               <small id="key-status"></small>

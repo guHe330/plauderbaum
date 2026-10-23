@@ -5,6 +5,7 @@
 # Do this on Windows: the file must include the Windows-only packages.
 # .github/workflows/update-dependencies.yml does the same once a month.
 anthropic
+cursor-sdk
 edge-tts
 fastapi
 keyring

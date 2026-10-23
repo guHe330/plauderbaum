@@ -15,7 +15,7 @@ A small local app for practising everyday conversations in a foreign language. Y
 - **Stuck? Answer in your native language.** You get the sentence in the language you are learning, in at least three variants, and then say it yourself.
 - **Conversation trees.** Rewind to any point and answer differently, or ask how else the other person could have reacted. Earlier branches are kept, and you can switch between them.
 - **Saved automatically.** Conversations survive a restart and can be reopened from the start page.
-- **Your own key.** It talks to Claude through the Anthropic API, or to any model on OpenRouter.
+- **Your own key.** Each turn goes to a local Cursor agent, to Claude through the Anthropic API, or to any model on OpenRouter.
 
 ![A conversation in a café: the learner's lines with corrections, and a tutor line that has a second version](docs/screenshots/conversation.png)
 
@@ -36,10 +36,10 @@ A small local app for practising everyday conversations in a foreign language. Y
 | Operating system | Windows 10 or 11, or macOS. On Windows, start with `run.bat`. On macOS, start with `./run.sh`. |
 | Python | 3.12 or newer |
 | Browser | Microsoft Edge or Google Chrome (Edge is part of Windows) |
-| API key | An [Anthropic API key](https://console.anthropic.com/) or an [OpenRouter key](https://openrouter.ai/keys), with some credit on it |
+| API key | A [Cursor API key](https://cursor.com/dashboard/integrations), an [Anthropic API key](https://console.anthropic.com/), or an [OpenRouter key](https://openrouter.ai/keys) |
 | Internet | Needed for the model and for the voice |
 
-The API is billed by usage and is separate from a Claude.ai subscription. See [Cost](#cost).
+Cursor usage is billed as agent runs. Anthropic and OpenRouter are billed by usage and are separate from a Claude.ai subscription. See [Cost](#cost).
 
 ## First start
 
@@ -119,7 +119,9 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
 
 | Setting | Values | What it does |
 |---|---|---|
-| Provider | Anthropic, OpenRouter | Where the model call goes. |
+| Provider | Cursor, Anthropic, OpenRouter | Where the turn goes. |
+| Cursor API key | | Used when the provider is Cursor. Leave the field empty to keep the saved key. Create one at cursor.com/dashboard/integrations. |
+| Model (Cursor) | Composer 2.5, Auto | Composer 2.5 is the usual model. Auto lets Cursor choose. A Cursor turn is one local agent run with no tools. |
 | Anthropic API key | | Used when the provider is Anthropic. Leave the field empty to keep the saved key. |
 | Model (Anthropic) | Claude Opus 5.5, Claude Sonnet 5.5 | Opus gives the best corrections. Sonnet is faster and cheaper. |
 | OpenRouter API key | | Used when the provider is OpenRouter. |
@@ -133,7 +135,7 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
 
 A conversation keeps the language and the level it was started with. You can change both in Settings and still continue an older conversation as it was: it is judged in its own language at its own level. If its language differs from the one in Settings, it is also read with the voice it was started with.
 
-Instead of saving a key in Settings you can set the environment variable `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`. A saved key takes precedence.
+Instead of saving a key in Settings you can set `CURSOR_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENROUTER_API_KEY`. A saved key takes precedence.
 
 ## Where your data is
 
@@ -146,23 +148,23 @@ Nothing personal is kept in the program folder.
 | Saved conversations, one file each | `%APPDATA%\Plauderbaum\conversations\` on Windows, `~/Library/Application Support/Plauderbaum/conversations/` on macOS |
 | Browser profile of the app window | `%LOCALAPPDATA%\Plauderbaum\browser-profile\` on Windows, `~/Library/Caches/Plauderbaum/browser-profile/` on macOS |
 
-The keys are not written to a file: they are kept in the credential store of your user account and can be viewed or removed there (Control Panel → Credential Manager). A key from an earlier version that still sits in `settings.json` is moved over at the next start. Instead of saving a key you can set the environment variable `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`.
+The keys are not written to a file: they are kept in the credential store of your user account and can be viewed or removed there (Control Panel → Credential Manager). A key from an earlier version that still sits in `settings.json` is moved over at the next start. Instead of saving a key you can set `CURSOR_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENROUTER_API_KEY`.
 
 To remove everything the app has stored, delete those two `Plauderbaum` folders and the *Plauderbaum* entries in Credential Manager (Windows) or Keychain Access (macOS).
 
 ### What leaves your computer
 
-- **To Anthropic or OpenRouter:** the scenario, the conversation so far and your new message, with every turn. With OpenRouter, the request is passed on to the provider of the model you chose.
-- **To Microsoft:** every line that is read aloud. The voices come from Microsoft's online text-to-speech service through the [`edge-tts`](https://github.com/rany2/edge-tts) library, which uses an unofficial interface and may stop working.
+- **To the provider you chose:** the scenario, the conversation so far and your new message, with every turn. Cursor runs a local agent with no tools and an empty folder, so that turn cannot edit this project. With OpenRouter, the request is passed on to the provider of the model you chose.
 - **To OpenRouter:** a request for the public model list when you open the OpenRouter settings.
+- **To Microsoft:** every line that is read aloud. The voices come from Microsoft's online text-to-speech service through the [`edge-tts`](https://github.com/rany2/edge-tts) library, which uses an unofficial interface and may stop working.
 
 There is no telemetry and no account. The app's own server listens on `127.0.0.1` only and has no login, so anything running on the same computer can reach it while the app is open.
 
 ## Cost
 
-**You pay for what the app uses.** Every model call is made with your API key and billed to your Anthropic or OpenRouter account at their prices. The author of this app has no part in that billing and takes no responsibility for what it costs you.
+**You pay for what the app uses.** Every turn is made with your API key and billed to the account of the provider you chose. The author of this app has no part in that billing and takes no responsibility for what it costs you.
 
-Each turn is one model call that carries the whole conversation so far. *Other reply* and starting a conversation are one call each. The voices are free. As a rough, unmeasured estimate, a long session with Claude Opus stays well under one US dollar, and Sonnet costs about half of that. Other models on OpenRouter can cost much more or much less.
+Each turn carries the whole conversation so far. *Other reply* and starting a conversation are one turn each. The voices are free. A Cursor turn starts an agent and takes longer than a Claude or OpenRouter call. As a rough, unmeasured estimate, a long session with Claude Opus stays well under one US dollar, and Sonnet costs about half of that. Other models on OpenRouter can cost much more or much less.
 
 The app does not count what it spends and has no limit of its own. To stay in control:
 
@@ -187,7 +189,7 @@ More detail is in [SECURITY.md](SECURITY.md).
  └─ web/  plain HTML, CSS, JavaScript modules, no build step
       │  HTTP, 127.0.0.1:8765
  tutor/ Python package: FastAPI app served by uvicorn
-      ├─ roleplay ──► llm ──► Anthropic API  or  OpenRouter
+      ├─ roleplay ──► llm ──► Cursor, Claude, or OpenRouter
       ├─ speech   ──► Microsoft neural voices (edge-tts)
       ├─ settings ──► %APPDATA%\Plauderbaum\settings.json
       └─ conversations ► %APPDATA%\Plauderbaum\conversations\*.json
@@ -222,6 +224,7 @@ tutor/
   server.py           HTTP routes; builds the app from a data folder
   roleplay.py         scenarios, prompts, answer formats; the three model tasks
   llm/                one prompt in, one checked JSON object out
+    cursor_agent.py     one local Cursor agent prompt per turn, with no tools
     claude.py           Anthropic API
     openrouter.py       OpenRouter API and its model list
     answer.py           parses and checks the model's answer
@@ -253,7 +256,7 @@ tools/                the shortcut script
 packaging/            builds the download package for a release
 ```
 
-Dependencies are deliberately few: `fastapi` with `uvicorn` to serve it, `anthropic` for the Claude API, `edge-tts` for the voices, and `keyring` for the credential store. OpenRouter is called with Python's standard library. The page uses no framework and no packages.
+Dependencies are deliberately few: `fastapi` with `uvicorn` to serve it, `cursor-sdk` for the Cursor agent, `anthropic` for the Claude API, `edge-tts` for the voices, and `keyring` for the credential store. OpenRouter is called with Python's standard library. The page uses no framework and no packages.
 
 ## Development
 
@@ -309,25 +312,13 @@ Plauderbaum is built on the work of others. None of it is included in this repos
 | Package | Used for | Licence |
 |---|---|---|
 | [anthropic](https://github.com/anthropics/anthropic-sdk-python) | Client for the Claude API | MIT |
+| [cursor-sdk](https://cursor.com/docs/sdk/python) | Runs the local Cursor agent that answers each turn | Proprietary |
 | [edge-tts](https://github.com/rany2/edge-tts) | The voices: Microsoft's online text-to-speech | LGPL-3.0 |
 | [fastapi](https://github.com/fastapi/fastapi) | The local HTTP API behind the page | MIT |
 | [keyring](https://github.com/jaraco/keyring) | Stores the API keys in the system's credential store | MIT |
 | [uvicorn](https://uvicorn.dev/) | The web server that runs the FastAPI app | BSD-3-Clause |
 
-Everything else on the Python side is the standard library, including the calls to OpenRouter.
-
-<details>
-<summary>The 33 packages those five bring along</summary>
-
-- **MIT:** annotated-doc, annotated-types, anyio, attrs, docstring-parser, h11, jaraco-classes, jaraco-context, jaraco-functools, jiter, more-itertools, pydantic, pydantic-core, tabulate, truststore, typing-inspection
-- **Apache-2.0:** aiosignal, frozenlist, multidict, opentelemetry-api, propcache, yarl
-- **BSD-3-Clause:** click, httpcore2, httpx2, idna, pywin32-ctypes, starlette
-- **PSF-2.0:** aiohappyeyeballs, typing-extensions
-- **Apache-2.0 AND MIT:** aiohttp
-- **MPL-2.0:** certifi
-- **MIT OR Apache-2.0:** sniffio
-
-</details>
+The packages those six bring along are pinned, with their hashes, in `requirements.txt`.
 
 Licences are as declared in each package's own metadata at the pinned version.
 
@@ -339,7 +330,9 @@ No third-party JavaScript, CSS or fonts. It is plain HTML, CSS and JavaScript mo
 
 Each has terms of its own, which apply to you as the one using your key or connection:
 
-- [Anthropic API](https://www.anthropic.com/legal/commercial-terms) or [OpenRouter](https://openrouter.ai/terms) for the model
+- [Cursor](https://cursor.com/terms-of-service) when the provider is Cursor
+- [Anthropic](https://www.anthropic.com/legal/commercial-terms) when the provider is Anthropic
+- [OpenRouter](https://openrouter.ai/terms) when the provider is OpenRouter, and the terms of the model provider it forwards to
 - Microsoft's online text-to-speech service for the voices, reached through `edge-tts` over an unofficial interface
 
 ### Only for development

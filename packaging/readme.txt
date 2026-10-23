@@ -11,7 +11,7 @@ To start
 2. On Windows, double-click run.bat. On macOS, run ./run.sh in a terminal
    from this folder. The first start takes a minute, because it sets up a
    private Python environment in the folder .venv next to it.
-3. Open Settings in the app and add your Anthropic or OpenRouter API key.
+3. Open Settings in the app and add a Cursor, Anthropic, or OpenRouter API key.
 
 For a shortcut with an icon, run in this folder:
    powershell -ExecutionPolicy Bypass -File tools\make_shortcut.ps1

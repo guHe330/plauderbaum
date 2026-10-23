@@ -49,7 +49,8 @@ class PackageTest(unittest.TestCase):
         root = f"Plauderbaum_{tutor.__version__}"
         for needed in [
             "run.bat", "run.sh", "requirements.txt", "LICENSE", "readme.txt",
-            "tutor/__main__.py", "tutor/llm/claude.py", "web/index.html", "web/main.js",
+            "tutor/__main__.py", "tutor/llm/cursor_agent.py", "tutor/llm/claude.py",
+            "tutor/llm/openrouter.py", "web/index.html", "web/main.js",
             "assets/icon.png", "tools/make_shortcut.ps1",
         ]:
             self.assertIn(f"{root}/{needed}", self.names)
