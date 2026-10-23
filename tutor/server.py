@@ -20,7 +20,7 @@ from .keychain import KeyStore, KeyStoreError, SystemKeyStore
 from .llm import openrouter
 from .models import Conversation, ConversationRequest, ReplyRequest, StartRequest, TurnRequest
 from .paths import APP_NAME, ASSETS, WEB
-from .settings import LANGUAGES, MODELS, Settings, SettingsStore
+from .settings import CURSOR_MODELS, LANGUAGES, MODELS, Settings, SettingsStore
 from .speech import Speech
 
 ConversationId = Annotated[str, PathParam(pattern=r"^[0-9a-f-]{36}$")]
@@ -76,6 +76,7 @@ def settings_routes(settings: SettingsStore) -> APIRouter:
             "settings": settings.load().public(),
             "languages": LANGUAGES,
             "models": MODELS,
+            "cursor_models": CURSOR_MODELS,
             "version": __version__,
         }
 

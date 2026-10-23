@@ -53,24 +53,29 @@ class KeysInSettingsTest(unittest.TestCase):
         self.file.write_text(json.dumps(content), encoding="utf-8")
 
     def test_saved_keys_go_to_the_key_store_and_not_into_the_file(self):
-        saved = self.store.save({"api_key": "sk-ant-1", "openrouter_api_key": "sk-or-1", "level": "B1"})
-        self.assertEqual((saved.api_key, saved.openrouter_api_key), ("sk-ant-1", "sk-or-1"))
+        saved = self.store.save({
+            "cursor_api_key": "cursor_1", "api_key": "sk-ant-1", "openrouter_api_key": "sk-or-1", "level": "B1",
+        })
+        self.assertEqual((saved.cursor_api_key, saved.api_key, saved.openrouter_api_key), ("cursor_1", "sk-ant-1", "sk-or-1"))
+        self.assertEqual(self.keys.get("cursor_api_key"), "cursor_1")
         self.assertEqual(self.keys.get("api_key"), "sk-ant-1")
         self.assertEqual(self.keys.get("openrouter_api_key"), "sk-or-1")
-        self.assertNotIn("sk-", self.file.read_text(encoding="utf-8"))
+        written = self.file.read_text(encoding="utf-8")
+        self.assertNotIn("cursor_1", written)
+        self.assertNotIn("sk-", written)
         self.assertNotIn("api_key", self.file_content())
         self.assertEqual(self.file_content()["level"], "B1")
 
     def test_keys_come_back_from_the_key_store(self):
-        self.store.save({"api_key": "sk-ant-1"})
+        self.store.save({"api_key": "cursor-1"})
         again = SettingsStore(self.file, self.keys).load()
-        self.assertEqual(again.api_key, "sk-ant-1")
+        self.assertEqual(again.api_key, "cursor-1")
         self.assertEqual(SettingsStore(self.file, MemoryKeyStore()).load().api_key, "")
 
     def test_a_key_left_in_an_old_file_still_works(self):
-        self.write_old_file(api_key="sk-ant-old", level="B1")
+        self.write_old_file(api_key="cursor-old", level="B1")
         loaded = self.store.load()
-        self.assertEqual((loaded.api_key, loaded.level), ("sk-ant-old", "B1"))
+        self.assertEqual((loaded.api_key, loaded.level), ("cursor-old", "B1"))
 
     def test_old_plaintext_keys_are_moved(self):
         self.write_old_file(api_key="sk-ant-old", openrouter_api_key="sk-or-old", level="B1")
@@ -88,31 +93,31 @@ class KeysInSettingsTest(unittest.TestCase):
         self.assertEqual(self.file.read_text(encoding="utf-8"), before)
 
     def test_saving_something_else_does_not_lose_an_old_plaintext_key(self):
-        self.write_old_file(api_key="sk-ant-old", openrouter_api_key="sk-or-old")
-        saved = self.store.save({"level": "B2", "api_key": "sk-ant-new"})
-        self.assertEqual((saved.api_key, saved.openrouter_api_key), ("sk-ant-new", "sk-or-old"))
-        self.assertEqual(self.keys.get("openrouter_api_key"), "sk-or-old")
-        self.assertNotIn("sk-", self.file.read_text(encoding="utf-8"))
+        self.write_old_file(api_key="cursor-old")
+        saved = self.store.save({"level": "B2"})
+        self.assertEqual((saved.api_key, saved.level), ("cursor-old", "B2"))
+        self.assertEqual(self.keys.get("api_key"), "cursor-old")
+        self.assertNotIn("cursor-", self.file.read_text(encoding="utf-8"))
 
     def test_the_key_store_wins_over_an_old_file(self):
-        self.keys.set("api_key", "sk-ant-store")
-        self.write_old_file(api_key="sk-ant-old")
-        self.assertEqual(self.store.load().api_key, "sk-ant-store")
+        self.keys.set("api_key", "cursor-store")
+        self.write_old_file(api_key="cursor-old")
+        self.assertEqual(self.store.load().api_key, "cursor-store")
         self.store.move_plaintext_keys()
-        self.assertEqual(self.keys.get("api_key"), "sk-ant-store")
+        self.assertEqual(self.keys.get("api_key"), "cursor-store")
 
     def test_a_refusing_key_store_leaves_the_file_alone(self):
         store = SettingsStore(self.file, RefusingKeyStore())
         with self.assertRaises(KeyStoreError):
-            store.save({"api_key": "sk-ant-1", "level": "B1"})
+            store.save({"api_key": "cursor-1", "level": "B1"})
         self.assertFalse(self.file.exists())
 
-        self.write_old_file(api_key="sk-ant-old")
+        self.write_old_file(api_key="cursor-old")
         before = self.file.read_text(encoding="utf-8")
         with self.assertRaises(KeyStoreError):
             store.move_plaintext_keys()
         self.assertEqual(self.file.read_text(encoding="utf-8"), before)
-        self.assertEqual(store.load().api_key, "sk-ant-old")
+        self.assertEqual(store.load().api_key, "cursor-old")
 
 
 class SystemKeyStoreTest(unittest.TestCase):
@@ -126,14 +131,14 @@ class SystemKeyStoreTest(unittest.TestCase):
         backend = self.use(FakeBackend())
         store = SystemKeyStore("Plauderbaum-test")
         self.assertEqual(store.get("api_key"), "")
-        store.set("api_key", "sk-ant-1")
-        self.assertEqual(store.get("api_key"), "sk-ant-1")
-        self.assertEqual(backend.passwords, {("Plauderbaum-test", "api_key"): "sk-ant-1"})
+        store.set("api_key", "cursor-1")
+        self.assertEqual(store.get("api_key"), "cursor-1")
+        self.assertEqual(backend.passwords, {("Plauderbaum-test", "api_key"): "cursor-1"})
 
     def test_a_failing_store_is_reported_in_plain_words(self):
         self.use(FakeBackend(broken=True))
         with self.assertRaisesRegex(KeyStoreError, "environment variable"):
-            SystemKeyStore("Plauderbaum-test").set("api_key", "sk-ant-1")
+            SystemKeyStore("Plauderbaum-test").set("api_key", "cursor-1")
 
 
 if __name__ == "__main__":
