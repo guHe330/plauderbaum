@@ -10,4 +10,4 @@ version. It is distributed WITHOUT ANY WARRANTY; see the LICENSE file.
 
 # The one place the version is written down. A release is made by pushing the
 # tag v<version>; the release workflow refuses a tag that does not match.
-__version__ = "0.2.1"
+__version__ = "0.2.2"
