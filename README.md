@@ -11,7 +11,7 @@
 
 A small local app for practising everyday conversations in a foreign language. You pick a situation (bakery, hotel, train station, or a topic of your own), an AI model plays the other person, and you type your side. The tutor's lines are read aloud.
 
-- **Corrections instead of a chat.** Every message is judged before the conversation moves on. If it has errors, you see how to say it and try again.
+- **Every message is corrected.** Each one is judged before the conversation moves on. If it has errors, you see how to say it and try again.
 - **Stuck? Answer in your native language.** You get the sentence in the language you are learning, in at least three variants, and then say it yourself.
 - **Conversation trees.** Rewind to any point and answer differently, or ask how else the other person could have reacted. Earlier branches are kept, and you can switch between them.
 - **Saved automatically.** Conversations survive a restart and can be reopened from the start page.
@@ -19,13 +19,13 @@ A small local app for practising everyday conversations in a foreign language. Y
 
 ![A conversation in a café: the learner's lines with corrections, and a tutor line that has a second version](docs/screenshots/conversation.png)
 
-> **Built entirely by an AI agent.** Every line of code, the tests and this README were written by Claude (Anthropic's coding agent, Claude Code), directed by one person in conversation. No code was written by hand. It was reviewed by using it, not by a line-by-line audit.
+> **Built entirely by an AI agent.** Every line of code, the tests and this README were written by Claude (Anthropic's coding agent, Claude Code), directed by one person in conversation. No code was written by hand. It was reviewed by using it; nobody has audited it line by line.
 
 > **A personal tool, shared as it is.** It was made for one learner's needs (learning Italian) and is published in case it is useful to someone else. There is no roadmap and no promise of support.
 
 > **Early and moving.** Expect a lot to change: features, file layout, the format of saved conversations. Updates may break things without a migration path.
 
-> **Your key, your cost, your responsibility.** The app uses your own API key. Everything it spends is billed to your account, and keeping that key safe is up to you. The app sets no spending limit. See [Cost](#cost) and [Your API key](#your-api-key).
+> **You pay, and you keep the key safe.** The app uses your own API key. Everything it spends is billed to your account, and keeping that key safe is up to you. The app sets no spending limit. See [Cost](#cost) and [Your API key](#your-api-key).
 
 > **It is not offline.** Your conversations are sent to the AI provider you choose, and the lines that are read aloud go to Microsoft's voice service. See [What leaves your computer](#what-leaves-your-computer).
 
@@ -178,108 +178,13 @@ The app does not count what it spends and has no limit of its own. To stay in co
 - Do not use the app on a computer or user account you share with people you would not give the key to.
 - If you think a key has leaked, revoke it in your provider's console and create a new one.
 
-More detail is in [SECURITY.md](SECURITY.md).
+More detail, and how to report a security problem, is in [SECURITY.md](SECURITY.md).
 
-## How it works
+## More documentation
 
-```
- app window (Edge/Chrome, --app mode)
- └─ web/  plain HTML, CSS, JavaScript modules, no build step
-      │  HTTP, 127.0.0.1:8765
- tutor/ Python package: FastAPI app served by uvicorn
-      ├─ roleplay ──► llm ──► Anthropic API  or  OpenRouter
-      ├─ speech   ──► Microsoft neural voices (edge-tts)
-      ├─ settings ──► %APPDATA%\Plauderbaum\settings.json
-      └─ conversations ► %APPDATA%\Plauderbaum\conversations\*.json
-```
-
-It is not Electron. `run.bat` starts a Python web server on your own machine and opens its page in an Edge or Chrome window without browser controls. The window uses a profile of its own, so it is a separate process, and the server stops when that process ends.
-
-### One turn
-
-1. The page sends the scenario, the path of the conversation that is currently shown, and your new message to `POST /api/turn`.
-2. `roleplay` builds the prompt. `llm` sends it to the chosen provider and requires a JSON object with a fixed shape: a verdict (`ok`, `has_errors`, `other_language`, `question`, `unclear`), the ideal sentence, alternatives, an explanation, and the other person's next line.
-3. The answer is checked against that shape. Anything else is reported as an unreadable answer and never reaches the page.
-4. **The app decides what happens next, not the model.** On `ok`, the page adds your line and the reply to the tree. On anything else it shows the correction and stays where it was.
-
-The model only ever sees your lines in their corrected form, so earlier mistakes do not pile up in the conversation.
-
-### The conversation tree
-
-A conversation is a tree of lines in which tutor and learner alternate. Rewinding and answering again, or asking for another reply, adds a sibling to an existing line instead of replacing it. The conversation on screen is one path through the tree, from the opening line to the line it currently ends on. Each line remembers which of its answers was shown last, so switching back to a branch continues where you left it. An answer that matches an earlier one at the same point, ignoring case and punctuation, returns to that branch instead of adding a sibling.
-
-The server keeps no conversation state between requests. The page owns the tree, sends the relevant path with every model call, and stores the whole tree through `PUT /api/conversations/{id}` after every change. Failed attempts and correction cards are not part of the tree; a learner line only records how many attempts failed before it was accepted.
-
-### Code layout
-
-```
-run.bat               starter on Windows: creates .venv on first run, then `python -m tutor`
-run.sh                the same starter for macOS
-requirements.in       the packages used directly
-requirements.txt      generated from it: every package pinned, with hashes
-tutor/
-  __main__.py         starts the server and the app window, stops with the window
-  server.py           HTTP routes; builds the app from a data folder
-  roleplay.py         scenarios, prompts, answer formats; the three model tasks
-  llm/                one prompt in, one checked JSON object out
-    claude.py           Anthropic API
-    openrouter.py       OpenRouter API and its model list
-    answer.py           parses and checks the model's answer
-  models.py           the data exchanged with the page and saved to disk
-  settings.py         the settings, their allowed values, their file
-  keychain.py         the API keys in the system's credential store
-  conversations.py    saved conversations, one JSON file each
-  speech.py           text-to-speech with a small cache
-  window.py           finds Edge or Chrome and opens the app window
-  paths.py            program folder and per-user data folders
-  errors.py           the error type whose message is shown to the learner
-web/
-  index.html, style.css
-  main.js             entry point
-  tree.js             the conversation tree; knows nothing of page or server
-  session.js          what happens in an open conversation
-  chat-view.js        draws a conversation; reports clicks to session.js
-  tree-view.js        draws the whole tree in the sidebar
-  home.js             start page: scenarios, own topic, earlier conversations
-  settings.js         the Settings tab
-  store.js            loading and saving conversations on the server
-  speech.js           playback queue for spoken lines
-  navigation.js       tabs and pages
-  api.js, dom.js, state.js   small shared helpers
-tests/                unit tests for both sides
-.github/              CI, the release and dependency-update workflows, issue forms
-docs/                 the banner and the screenshots in this README
-tools/                the shortcut script
-packaging/            builds the download package for a release
-```
-
-Dependencies are deliberately few: `fastapi` with `uvicorn` to serve it, `anthropic` for the Claude API, `edge-tts` for the voices, and `keyring` for the credential store. OpenRouter is called with Python's standard library. The page uses no framework and no packages.
-
-## Development
-
-Run the tests from the app folder:
-
-```
-.venv\Scripts\python.exe -m unittest discover -s tests
-node --test
-```
-
-On macOS the Python command is `.venv/bin/python -m unittest discover -s tests`.
-
-The Python tests cover settings, conversation storage, answer parsing, provider error handling and the prompts, without calling a model. The JavaScript tests cover the conversation tree and need Node.js 22 or newer; the app itself does not need Node.
-
-To start without the starter script: `.venv\Scripts\python.exe -m tutor` on Windows, or `.venv/bin/python -m tutor` on macOS.
-
-### Releases
-
-Versions are numbered `major.minor.patch`. While the major number is 0, any release may change the format of saved conversations or the settings.
-
-The version is written down in one place, `__version__` in `tutor/__init__.py`. To publish a release:
-
-1. Change `__version__` and commit.
-2. Tag that commit `v<version>`, for example `v0.1.0`, and push the tag.
-
-The [release workflow](.github/workflows/release.yml) refuses a tag that does not match `__version__`, runs the tests, builds `Plauderbaum_<version>.zip` with `packaging/make_zip.py`, attests where it was built and attaches it to a new GitHub release. To build the same zip locally: `python packaging/make_zip.py`, which writes to `dist/`.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how it works inside, one turn step by step, the conversation tree, the code layout
+- [CONTRIBUTING.md](CONTRIBUTING.md): running the tests, pull requests, releases
+- [THIRD_PARTY.md](THIRD_PARTY.md): the packages and services the app uses, with their licences
 
 ## Other platforms
 
@@ -295,62 +200,6 @@ The [release workflow](.github/workflows/release.yml) refuses a tag that does no
 - You type; there is no speech input and no feedback on pronunciation.
 - The interface, the explanations and the translations are in English only.
 - Saved conversations have no version number yet, so a later change of the format may make old ones unreadable.
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for how to report a problem.
-
-## Third-party software and services
-
-Plauderbaum is built on the work of others. None of it is included in this repository or in the release zip: `run.bat` downloads the Python packages from [PyPI](https://pypi.org/) at the first start, in exactly the versions pinned in `requirements.txt`.
-
-### Python packages the app imports
-
-| Package | Used for | Licence |
-|---|---|---|
-| [anthropic](https://github.com/anthropics/anthropic-sdk-python) | Client for the Claude API | MIT |
-| [edge-tts](https://github.com/rany2/edge-tts) | The voices: Microsoft's online text-to-speech | LGPL-3.0 |
-| [fastapi](https://github.com/fastapi/fastapi) | The local HTTP API behind the page | MIT |
-| [keyring](https://github.com/jaraco/keyring) | Stores the API keys in the system's credential store | MIT |
-| [uvicorn](https://uvicorn.dev/) | The web server that runs the FastAPI app | BSD-3-Clause |
-
-Everything else on the Python side is the standard library, including the calls to OpenRouter.
-
-<details>
-<summary>The 33 packages those five bring along</summary>
-
-- **MIT:** annotated-doc, annotated-types, anyio, attrs, docstring-parser, h11, jaraco-classes, jaraco-context, jaraco-functools, jiter, more-itertools, pydantic, pydantic-core, tabulate, truststore, typing-inspection
-- **Apache-2.0:** aiosignal, frozenlist, multidict, opentelemetry-api, propcache, yarl
-- **BSD-3-Clause:** click, httpcore2, httpx2, idna, pywin32-ctypes, starlette
-- **PSF-2.0:** aiohappyeyeballs, typing-extensions
-- **Apache-2.0 AND MIT:** aiohttp
-- **MPL-2.0:** certifi
-- **MIT OR Apache-2.0:** sniffio
-
-</details>
-
-Licences are as declared in each package's own metadata at the pinned version.
-
-### The page
-
-No third-party JavaScript, CSS or fonts. It is plain HTML, CSS and JavaScript modules, and uses the fonts of your system.
-
-### Services the app talks to
-
-Each has terms of its own, which apply to you as the one using your key or connection:
-
-- [Anthropic API](https://www.anthropic.com/legal/commercial-terms) or [OpenRouter](https://openrouter.ai/terms) for the model
-- Microsoft's online text-to-speech service for the voices, reached through `edge-tts` over an unofficial interface
-
-### Only for development
-
-- [pip-tools](https://github.com/jazzband/pip-tools) (BSD-3-Clause) generates `requirements.txt`
-- Node.js runs the JavaScript tests with its built-in test runner
-- GitHub Actions: `actions/checkout`, `actions/setup-python`, `actions/setup-node` and `actions/attest-build-provenance`
-
-### Artwork
-
-The icon and the banner were made with Claude for this project and are covered by the project's licence.
 
 ## License
 
