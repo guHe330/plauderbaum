@@ -40,6 +40,8 @@ class Settings:
     model: str = "claude-opus-5-5"
     openrouter_api_key: str = ""
     openrouter_model: str = "anthropic/claude-sonnet-5.5"
+    local_server: str = "http://localhost:11434"
+    local_model: str = ""
     target_language: str = "it"
     voice: str = "it-IT-IsabellaNeural"
     speech_rate: str = "+0%"
@@ -71,7 +73,8 @@ class Settings:
         view = {k: v for k, v in asdict(self).items() if k not in SECRET_FIELDS}
         for provider in PROVIDER_KEYS:
             view[f"has_{provider}_key"] = bool(self.key_for(provider))
-        view["has_key"] = view[f"has_{self.provider}_key"]
+        # A local server needs no key.
+        view["has_key"] = view.get(f"has_{self.provider}_key", True)
         return view
 
 
@@ -79,7 +82,7 @@ DEFAULTS = Settings()
 FIELDS = {field.name for field in fields(Settings)}
 
 CHOICES = {
-    "provider": set(PROVIDER_KEYS),
+    "provider": set(PROVIDER_KEYS) | {"local"},
     "model": set(MODELS),
     "target_language": set(LANGUAGES),
     "speech_rate": {"-30%", "-15%", "+0%"},
@@ -99,6 +102,10 @@ def _checked(name: str, value: object) -> str | bool:
     value = value.strip()
     if name in CHOICES and value not in CHOICES[name]:
         raise ValueError(f"Invalid value for {name}: {value!r}")
+    if name == "local_server":
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("The local server address must start with http:// or https://")
+        value = value.rstrip("/")
     return value
 
 

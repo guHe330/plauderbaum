@@ -58,14 +58,35 @@ async function loadOpenrouterModels() {
   }
 }
 
+// The local server's model list, keeping `selected` while it loads.
+async function loadLocalModels(selected) {
+  const select = form.elements.local_model;
+  const status = $("#local-models-status");
+  select.replaceChildren();
+  if (selected) select.append(new Option(selected, selected));
+  try {
+    const models = await api(`/api/local-models?server=${encodeURIComponent(form.elements.local_server.value)}`);
+    select.replaceChildren();
+    for (const model of models) select.append(new Option(model.label, model.id));
+    if (models.some((model) => model.id === selected)) select.value = selected;
+    status.textContent = models.length
+      ? "The models the server offers. Small models give much weaker corrections than Claude."
+      : "The server has no models. Pull one in Ollama or load one in LM Studio.";
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
 function showProvider(provider) {
   document.querySelectorAll("[data-provider]").forEach((block) => { block.hidden = block.dataset.provider !== provider; });
   if (provider === "openrouter") loadOpenrouterModels();
+  if (provider === "local") loadLocalModels(state.settings.local_model);
 }
 
 function fillForm(settings) {
   for (const name of SELECTS) form.elements[name].value = settings[name];
   form.elements.openrouter_model.value = settings.openrouter_model;
+  form.elements.local_server.value = settings.local_server;
   form.elements.auto_speak.checked = settings.auto_speak;
   showProvider(settings.provider);
 }
@@ -76,8 +97,9 @@ function readForm() {
     api_key: form.elements.api_key.value,
     openrouter_api_key: form.elements.openrouter_api_key.value,
     openrouter_model: form.elements.openrouter_model.value,
+    local_server: form.elements.local_server.value,
   };
-  for (const name of [...SELECTS, "voice"]) {
+  for (const name of [...SELECTS, "voice", "local_model"]) {
     if (form.elements[name].value) values[name] = form.elements[name].value;
   }
   return values;
@@ -102,6 +124,7 @@ export function initSettings({ settings, languages, models }) {
 }
 
 form.elements.provider.addEventListener("change", (event) => showProvider(event.target.value));
+form.elements.local_server.addEventListener("change", () => loadLocalModels(form.elements.local_model.value));
 form.elements.target_language.addEventListener("change", (event) => loadVoices(event.target.value));
 
 form.addEventListener("submit", async (event) => {

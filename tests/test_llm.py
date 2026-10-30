@@ -7,7 +7,7 @@ from tutor.errors import TutorError
 from tutor.llm.answer import parse_answer
 from tutor.llm.openrouter import read_completion
 from tutor.roleplay import REPLY_SCHEMA, TURN_SCHEMA
-from tutor.settings import Settings
+from tutor.settings import PROVIDER_KEYS, Settings
 
 REPLY = {"tutor_reply": "Ciao!", "tutor_reply_translation": "Hello!", "conversation_done": False}
 
@@ -63,6 +63,11 @@ class OpenRouterResponseTest(unittest.TestCase):
         with self.assertRaisesRegex(TutorError, "Provider overloaded"):
             read_completion(200, raw)
 
+    def test_messages_name_the_server_asked(self):
+        raw = self.response(error={"code": 404, "message": "model 'gemma' not found"})
+        with self.assertRaisesRegex(TutorError, "Local server error .404.: model 'gemma' not found"):
+            read_completion(200, raw, "Local server")
+
     def test_cut_off_answer(self):
         raw = self.response(choices=[{"finish_reason": "length", "message": {"content": '{"tutor'}}])
         with self.assertRaisesRegex(TutorError, "cut off"):
@@ -83,7 +88,7 @@ class AskTest(unittest.TestCase):
 
     def test_missing_key_is_reported_before_any_request(self):
         with mock.patch.dict("os.environ", {}, clear=True):
-            for provider in llm.PROVIDERS:
+            for provider in PROVIDER_KEYS:
                 with self.subTest(provider=provider), self.assertRaisesRegex(TutorError, "No API key"):
                     llm.ask(Settings(provider=provider), "system", "user", REPLY_SCHEMA)
 
