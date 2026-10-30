@@ -17,7 +17,7 @@ from . import __version__, roleplay
 from .conversations import ConversationStore
 from .errors import TutorError
 from .keychain import KeyStore, KeyStoreError, SystemKeyStore
-from .llm import openrouter
+from .llm import local, openrouter
 from .models import Conversation, ConversationRequest, ReplyRequest, StartRequest, TurnRequest
 from .paths import APP_NAME, ASSETS, WEB
 from .settings import LANGUAGES, MODELS, Settings, SettingsStore
@@ -94,6 +94,15 @@ def settings_routes(settings: SettingsStore) -> APIRouter:
             return openrouter.structured_output_models()
         except (OSError, ValueError, KeyError):
             raise HTTPException(status_code=502, detail="Could not load the OpenRouter model list.")
+
+    @router.get("/local-models")
+    def get_local_models(server: str):
+        if not server.startswith(("http://", "https://")):
+            raise HTTPException(status_code=400, detail="Invalid server address.")
+        try:
+            return local.models(server.rstrip("/"))
+        except (OSError, ValueError, KeyError, TypeError):
+            raise HTTPException(status_code=502, detail=f"Could not reach {server}. Is Ollama or LM Studio running?")
 
     return router
 

@@ -1,6 +1,6 @@
 # Security Policy
 
-Plauderbaum runs on your own computer, keeps your API keys in your system's credential store and sends your conversation to an AI provider. That is a small attack surface, but it deserves a clear description and a way to report problems.
+Plauderbaum runs on your own computer, keeps your API keys in your system's credential store and sends your conversation to an AI provider, or to a model server on your own computer if you choose one. That is a small attack surface, but it deserves a clear description and a way to report problems.
 
 ## Supported versions
 

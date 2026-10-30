@@ -27,7 +27,7 @@ A small local app for practising everyday conversations in a foreign language. Y
 
 > **You pay, and you keep the key safe.** The app uses your own API key. Everything it spends is billed to your account, and keeping that key safe is up to you. The app sets no spending limit. See [Cost](#cost) and [Your API key](#your-api-key).
 
-> **It is not offline.** Your conversations are sent to the AI provider you choose, and the lines that are read aloud go to Microsoft's voice service. See [What leaves your computer](#what-leaves-your-computer).
+> **It is not offline.** Your conversations are sent to the AI provider you choose, unless you run a model locally with Ollama or LM Studio, and the lines that are read aloud go to Microsoft's voice service. See [What leaves your computer](#what-leaves-your-computer).
 
 ## What you need
 
@@ -36,7 +36,7 @@ A small local app for practising everyday conversations in a foreign language. Y
 | Operating system | Windows 10 or 11, or macOS. On Windows, start with `run.bat`. On macOS, start with `./run.sh`. |
 | Python | 3.12 or newer |
 | Browser | Microsoft Edge or Google Chrome (Edge is part of Windows) |
-| API key | An [Anthropic API key](https://console.anthropic.com/) or an [OpenRouter key](https://openrouter.ai/keys), with some credit on it |
+| API key | An [Anthropic API key](https://console.anthropic.com/) or an [OpenRouter key](https://openrouter.ai/keys), with some credit on it. Not needed with a local model in [Ollama](https://ollama.com) or [LM Studio](https://lmstudio.ai). |
 | Internet | Needed for the model and for the voice |
 
 The API is billed by usage and is separate from a Claude.ai subscription. See [Cost](#cost).
@@ -119,11 +119,13 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
 
 | Setting | Values | What it does |
 |---|---|---|
-| Provider | Anthropic, OpenRouter | Where the model call goes. |
+| Provider | Anthropic, OpenRouter, Local | Where the model call goes. *Local* is a model running on this computer in Ollama or LM Studio. |
 | Anthropic API key | | Used when the provider is Anthropic. Leave the field empty to keep the saved key. |
 | Model (Anthropic) | Claude Opus 5.5, Claude Sonnet 5.5 | Opus gives the best corrections. Sonnet is faster and cheaper. |
 | OpenRouter API key | | Used when the provider is OpenRouter. |
 | Model (OpenRouter) | any model id | Suggestions come from OpenRouter's list of models that support structured output. Weaker models give weaker corrections, and some cannot produce the answer format at all. |
+| Server (Local) | an address | Where Ollama (`http://localhost:11434`) or LM Studio (`http://localhost:1234`) listens. |
+| Model (Local) | the models the server offers | Pull a model in Ollama or load one in LM Studio first. Small local models are noticeably weaker at corrections than Claude, and some break the answer format. |
 | I am learning | Italian, Spanish, French, Portuguese, English, German | The language of new conversations. Changing it also reloads the list of voices. |
 | My level | A1, A2, B1, B2 | How simple the other person's lines and the suggested sentences are, in new conversations. |
 | Corrections | Lenient, Strict | Lenient lets small slips pass with a note. Strict makes you repeat the sentence until it is correct. |
@@ -152,7 +154,7 @@ To remove everything the app has stored, delete those two `Plauderbaum` folders 
 
 ### What leaves your computer
 
-- **To Anthropic or OpenRouter:** the scenario, the conversation so far and your new message, with every turn. With OpenRouter, the request is passed on to the provider of the model you chose.
+- **To Anthropic or OpenRouter:** the scenario, the conversation so far and your new message, with every turn. With OpenRouter, the request is passed on to the provider of the model you chose. With a local model, nothing of this leaves your computer.
 - **To Microsoft:** every line that is read aloud. The voices come from Microsoft's online text-to-speech service through the [`edge-tts`](https://github.com/rany2/edge-tts) library, which uses an unofficial interface and may stop working.
 - **To OpenRouter:** a request for the public model list when you open the OpenRouter settings.
 

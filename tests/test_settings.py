@@ -56,6 +56,12 @@ class SettingsStoreTest(unittest.TestCase):
         self.file.write_text("{not json", encoding="utf-8")
         self.assertEqual(self.store.load(), DEFAULTS)
 
+    def test_local_server_address_is_checked_and_trimmed(self):
+        saved = self.store.save({"local_server": " http://localhost:1234/ "})
+        self.assertEqual(saved.local_server, "http://localhost:1234")
+        with self.assertRaises(ValueError):
+            self.store.save({"local_server": "localhost:1234"})
+
 
 class SettingsTest(unittest.TestCase):
     def test_public_view_never_contains_keys(self):
@@ -70,6 +76,12 @@ class SettingsTest(unittest.TestCase):
             view = Settings(provider="openrouter", api_key="sk-ant-1").public()
         self.assertTrue(view["has_anthropic_key"])
         self.assertFalse(view["has_key"])
+
+    def test_a_local_server_needs_no_key(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            view = Settings(provider="local").public()
+        self.assertTrue(view["has_key"])
+        self.assertFalse(view["has_anthropic_key"])
 
     def test_environment_variable_is_the_fallback_key(self):
         with mock.patch.dict(os.environ, {"OPENROUTER_API_KEY": "from-env"}, clear=True):
