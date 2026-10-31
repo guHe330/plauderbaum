@@ -72,7 +72,7 @@
             <select name="provider">
               <option value="anthropic">Anthropic (Claude, direct)</option>
               <option value="openrouter">OpenRouter (any model)</option>
-              <option value="local">Local (Ollama or LM Studio, no key)</option>
+              <option value="local">Local (Ollama or LM Studio)</option>
             </select>
           </label>
           <div data-provider="anthropic">
@@ -100,6 +100,12 @@
               <input name="local_server" type="url" maxlength="200" autocomplete="off" spellcheck="false" placeholder="http://localhost:11434">
               <small>Ollama listens on http://localhost:11434, LM Studio on http://localhost:1234. Conversations stay on this computer.</small>
             </label>
+            <label>API token (optional)
+              <input name="local_token" type="password" autocomplete="off">
+              <small id="local-token-status"></small>
+            </label>
+            <button type="button" id="save-local-token" hidden>Save token</button>
+            <button type="button" id="remove-local-token" class="secondary" hidden>Remove token</button>
             <label>Model
               <select name="local_model"></select>
               <small id="local-models-status"></small>

@@ -125,6 +125,7 @@ Download the newer zip, unpack it into a folder of its own and start it there. S
 | OpenRouter API key | | Used when the provider is OpenRouter. |
 | Model (OpenRouter) | any model id | Suggestions come from OpenRouter's list of models that support structured output. Weaker models give weaker corrections, and some cannot produce the answer format at all. |
 | Server (Local) | an address | Where Ollama (`http://localhost:11434`) or LM Studio (`http://localhost:1234`) listens. |
+| API token (Local) | optional | Only if the server requires one, like LM Studio with authentication on. Kept in your system's credential store. |
 | Model (Local) | the models the server offers | Pull a model in Ollama or load one in LM Studio first. Small local models are noticeably weaker at corrections than Claude, and some break the answer format. |
 | I am learning | Italian, Spanish, French, Portuguese, English, German | The language of new conversations. Changing it also reloads the list of voices. |
 | My level | A1, A2, B1, B2 | How simple the other person's lines and the suggested sentences are, in new conversations. |

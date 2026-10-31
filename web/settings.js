@@ -1,10 +1,15 @@
 // The Settings tab.
 import { api } from "./api.js";
 import { $, toast } from "./dom.js";
+import { onLeavingSettings, showTab } from "./navigation.js";
 import { sayIn } from "./speech.js";
 import { state, targetName } from "./state.js";
 
 const form = $("#settings-form");
+
+// Input events only come from the user, not from the lists that load by themselves.
+let unsaved = false;
+form.addEventListener("input", () => { unsaved = true; });
 
 const SELECTS = ["provider", "model", "target_language", "level", "strictness", "speech_rate"];
 
@@ -28,6 +33,10 @@ function applySettings(settings) {
   $("#openrouter-key-status").textContent = settings.has_openrouter_key
     ? saved
     : "Create one at openrouter.ai/keys. It is kept in your system's credential store.";
+  $("#local-token-status").textContent = settings.has_local_token
+    ? "A token is saved. Leave this empty to keep it."
+    : "Only if your server requires one, like LM Studio with authentication on. It is kept in your system's credential store.";
+  $("#remove-local-token").hidden = !settings.has_local_token;
   const name = targetName();
   document.querySelectorAll(".lang-name").forEach((node) => { node.textContent = name; });
 }
@@ -102,14 +111,33 @@ function readForm() {
   for (const name of [...SELECTS, "voice", "local_model"]) {
     if (form.elements[name].value) values[name] = form.elements[name].value;
   }
+  const token = form.elements.local_token.value.trim();
+  if (token) values.local_token = token;
   return values;
 }
 
-async function saveSettings() {
-  const data = await api("/api/settings", readForm());
-  applySettings(data.settings);
+function clearSecrets() {
   form.elements.api_key.value = "";
   form.elements.openrouter_api_key.value = "";
+  form.elements.local_token.value = "";
+  $("#save-local-token").hidden = true;
+}
+
+function discardChanges() {
+  unsaved = false;
+  clearSecrets();
+  fillForm(state.settings);
+  loadVoices(state.settings.target_language, state.settings.voice);
+}
+
+async function saveSettings() {
+  const values = readForm();
+  const data = await api("/api/settings", values);
+  applySettings(data.settings);
+  clearSecrets();
+  unsaved = false;
+  // A new token can open up a model list that was refused.
+  if (values.local_token) loadLocalModels(form.elements.local_model.value);
 }
 
 // Set the tab up with the answer of /api/settings. The returned promise
@@ -123,6 +151,18 @@ export function initSettings({ settings, languages, models }) {
   return loadVoices(settings.target_language, settings.voice);
 }
 
+onLeavingSettings(() => {
+  if (!unsaved) return;
+  if (!confirm("Save your changes to Settings? Cancel discards them.")) {
+    discardChanges();
+    return;
+  }
+  saveSettings().then(() => toast("Saved"), (error) => {
+    toast(error.message, true);
+    showTab("settings");
+  });
+});
+
 form.elements.provider.addEventListener("change", (event) => showProvider(event.target.value));
 form.elements.local_server.addEventListener("change", () => loadLocalModels(form.elements.local_model.value));
 form.elements.target_language.addEventListener("change", (event) => loadVoices(event.target.value));
@@ -132,6 +172,30 @@ form.addEventListener("submit", async (event) => {
   try {
     await saveSettings();
     toast("Saved");
+  } catch (error) {
+    toast(error.message, true);
+  }
+});
+
+form.elements.local_token.addEventListener("input", (event) => {
+  $("#save-local-token").hidden = !event.target.value.trim();
+});
+
+$("#save-local-token").addEventListener("click", async () => {
+  try {
+    await saveSettings();
+    toast("Token saved");
+  } catch (error) {
+    toast(error.message, true);
+  }
+});
+
+$("#remove-local-token").addEventListener("click", async () => {
+  try {
+    const data = await api("/api/settings", { local_token: "" });
+    applySettings(data.settings);
+    loadLocalModels(form.elements.local_model.value);
+    toast("Token removed");
   } catch (error) {
     toast(error.message, true);
   }

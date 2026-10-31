@@ -87,7 +87,9 @@ def read_completion(status: int, raw: bytes, who: str = "OpenRouter") -> str:
     choice = (data.get("choices") or [{}])[0]
     if choice.get("finish_reason") == "length":
         raise TutorError("The answer was cut off. Try again.")
-    return (choice.get("message") or {}).get("content") or ""
+    message = choice.get("message") or {}
+    # Some local reasoning models put the whole answer in the reasoning field.
+    return message.get("content") or message.get("reasoning_content") or ""
 
 
 @functools.cache

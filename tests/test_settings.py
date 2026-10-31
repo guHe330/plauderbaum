@@ -56,9 +56,20 @@ class SettingsStoreTest(unittest.TestCase):
         self.file.write_text("{not json", encoding="utf-8")
         self.assertEqual(self.store.load(), DEFAULTS)
 
+    def test_local_token_stays_out_of_the_file_and_can_be_removed(self):
+        saved = self.store.save({"local_token": "tok", "level": "B1"})
+        self.assertEqual(saved.local_token, "tok")
+        self.assertTrue(saved.public()["has_local_token"])
+        self.assertNotIn("local_token", saved.public())
+        self.assertNotIn("tok", self.file.read_text(encoding="utf-8"))
+        self.assertEqual(self.store.save({"level": "B2"}).local_token, "tok")
+        self.assertEqual(self.store.save({"local_token": ""}).local_token, "")
+
     def test_local_server_address_is_checked_and_trimmed(self):
         saved = self.store.save({"local_server": " http://localhost:1234/ "})
         self.assertEqual(saved.local_server, "http://localhost:1234")
+        saved = self.store.save({"local_server": "http://172.21.144.1:1234/v1/"})
+        self.assertEqual(saved.local_server, "http://172.21.144.1:1234")
         with self.assertRaises(ValueError):
             self.store.save({"local_server": "localhost:1234"})
 

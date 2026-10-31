@@ -1,13 +1,18 @@
 import json
+import tempfile
 import unittest
+import urllib.error
+from pathlib import Path
 from unittest import mock
 
 from tutor import llm
 from tutor.errors import TutorError
+from tutor.keychain import MemoryKeyStore
 from tutor.llm.answer import parse_answer
 from tutor.llm.openrouter import read_completion
 from tutor.roleplay import REPLY_SCHEMA, TURN_SCHEMA
-from tutor.settings import PROVIDER_KEYS, Settings
+from tutor.server import settings_routes
+from tutor.settings import PROVIDER_KEYS, Settings, SettingsStore
 
 REPLY = {"tutor_reply": "Ciao!", "tutor_reply_translation": "Hello!", "conversation_done": False}
 
@@ -67,6 +72,29 @@ class OpenRouterResponseTest(unittest.TestCase):
         raw = self.response(error={"code": 404, "message": "model 'gemma' not found"})
         with self.assertRaisesRegex(TutorError, "Local server error .404.: model 'gemma' not found"):
             read_completion(200, raw, "Local server")
+
+    def test_an_answer_in_the_reasoning_field_is_used_only_when_content_is_empty(self):
+        raw = json.dumps({"choices": [{"message": {"content": "", "reasoning_content": "{}"}}]}).encode()
+        self.assertEqual(read_completion(200, raw, "Local server"), "{}")
+        raw = json.dumps({"choices": [{"message": {"content": "[]", "reasoning_content": "{}"}}]}).encode()
+        self.assertEqual(read_completion(200, raw, "Local server"), "[]")
+
+    def test_a_local_server_that_wants_a_token_says_so(self):
+        refused = urllib.error.HTTPError("http://x", 401, "Unauthorized", {}, None)
+        with mock.patch("urllib.request.urlopen", side_effect=refused):
+            with self.assertRaisesRegex(TutorError, "API token"):
+                llm.local.models("http://x")
+
+    def test_the_saved_token_only_goes_to_the_saved_server(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = SettingsStore(Path(folder) / "settings.json", MemoryKeyStore())
+            store.save({"local_server": "http://localhost:1234", "local_token": "tok"})
+            route = next(r.endpoint for r in settings_routes(store).routes if r.path == "/local-models")
+            with mock.patch("tutor.llm.local.models", return_value=[]) as models:
+                route("http://localhost:1234/v1")
+                models.assert_called_with("http://localhost:1234", "tok")
+                route("http://elsewhere:1234")
+                models.assert_called_with("http://elsewhere:1234", "")
 
     def test_cut_off_answer(self):
         raw = self.response(choices=[{"finish_reason": "length", "message": {"content": '{"tutor'}}])

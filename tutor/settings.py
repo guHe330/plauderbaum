@@ -30,7 +30,7 @@ PROVIDER_KEYS = {
     "anthropic": ("api_key", "ANTHROPIC_API_KEY"),
     "openrouter": ("openrouter_api_key", "OPENROUTER_API_KEY"),
 }
-SECRET_FIELDS = {field for field, _ in PROVIDER_KEYS.values()}
+SECRET_FIELDS = {field for field, _ in PROVIDER_KEYS.values()} | {"local_token"}
 
 
 @dataclass(frozen=True)
@@ -42,6 +42,7 @@ class Settings:
     openrouter_model: str = "anthropic/claude-sonnet-5.5"
     local_server: str = "http://localhost:11434"
     local_model: str = ""
+    local_token: str = ""
     target_language: str = "it"
     voice: str = "it-IT-IsabellaNeural"
     speech_rate: str = "+0%"
@@ -73,6 +74,7 @@ class Settings:
         view = {k: v for k, v in asdict(self).items() if k not in SECRET_FIELDS}
         for provider in PROVIDER_KEYS:
             view[f"has_{provider}_key"] = bool(self.key_for(provider))
+        view["has_local_token"] = bool(self.local_token)
         # A local server needs no key.
         view["has_key"] = view.get(f"has_{self.provider}_key", True)
         return view
@@ -91,6 +93,14 @@ CHOICES = {
 }
 
 
+def checked_server(value: str) -> str:
+    """A local server address without the /v1 that LM Studio shows, or ValueError."""
+    value = value.strip()
+    if not value.startswith(("http://", "https://")):
+        raise ValueError("The local server address must start with http:// or https://")
+    return value.rstrip("/").removesuffix("/v1").rstrip("/")
+
+
 def _checked(name: str, value: object) -> str | bool:
     """The value as it may be stored, or ValueError if it is not acceptable."""
     if isinstance(getattr(DEFAULTS, name), bool):
@@ -103,9 +113,7 @@ def _checked(name: str, value: object) -> str | bool:
     if name in CHOICES and value not in CHOICES[name]:
         raise ValueError(f"Invalid value for {name}: {value!r}")
     if name == "local_server":
-        if not value.startswith(("http://", "https://")):
-            raise ValueError("The local server address must start with http:// or https://")
-        value = value.rstrip("/")
+        value = checked_server(value)
     return value
 
 
@@ -164,8 +172,9 @@ class SettingsStore:
             if name not in FIELDS:
                 continue
             value = _checked(name, value)
-            # An empty key field means "keep the stored key".
-            if name in SECRET_FIELDS and not value:
+            # An empty key field means "keep the stored key". The local token is
+            # optional, so there an empty value removes it.
+            if name in SECRET_FIELDS and not value and name != "local_token":
                 continue
             accepted[name] = value
         # The file is rewritten without keys below, so none may be left only there.
