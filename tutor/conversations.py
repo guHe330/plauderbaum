@@ -10,6 +10,30 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from pydantic import ValidationError
+
+from .errors import TutorError
+from .models import Conversation
+
+VERSION = 1
+# Step n turns a file of version n into version n + 1. Files from before there
+# were versions count as 0; they already have the shape of version 1.
+UPGRADES = {0: lambda conversation: conversation}
+
+
+def upgraded(conversation: dict) -> dict:
+    """A loaded file in the current format, or TutorError if it cannot be opened."""
+    version = conversation.get("version", 0)
+    if isinstance(version, int) and version > VERSION:
+        raise TutorError("This conversation was saved by a newer version of the app. Update the app to open it.")
+    try:
+        for step in range(version, VERSION):
+            conversation = UPGRADES[step](conversation)
+        Conversation.model_validate(conversation)
+    except (TypeError, KeyError, ValidationError):
+        raise TutorError("This conversation file is damaged and cannot be opened.")
+    return {**conversation, "version": VERSION}
+
 
 class ConversationStore:
     """Keeps conversations as `<id>.json` in one folder."""
@@ -51,6 +75,7 @@ class ConversationStore:
         conversation = {
             **conversation,
             "id": conversation_id,
+            "version": VERSION,
             "updated": datetime.now(timezone.utc).isoformat(),
         }
         self._folder.mkdir(parents=True, exist_ok=True)
