@@ -153,17 +153,14 @@ input[type="text"], input[type="password"], select {
 
 /* session */
 #tab-tutor { display: flex; flex-direction: column; }
+/* an open conversation fills the window: the chat and the tree scroll on their own */
+#tab-tutor:has(#session:not([hidden])) { overflow: hidden; padding-bottom: 0; }
 #session { flex: 1; min-height: 0; display: flex; flex-direction: column; width: 100%; }
-/* stays in view while the chat scrolls, so the way back is always there */
 .session-bar {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
-  position: sticky;
-  top: -28px;
-  z-index: 1;
-  background: var(--bg);
   margin-top: -28px;
   padding: 20px 0 12px;
 }
@@ -171,8 +168,8 @@ input[type="text"], input[type="password"], select {
 .session-bar button { flex: none; }
 /* the tree sits beside the chat; the page widens to make room for it */
 #session:has(.tree:not([hidden])) { max-width: 1100px; }
-.session-body { flex: 1; min-height: 0; display: flex; gap: 20px; align-items: flex-start; }
-.conversation { flex: 1; min-width: 0; display: flex; flex-direction: column; align-self: stretch; }
+.session-body { flex: 1; min-height: 0; display: flex; gap: 20px; }
+.conversation { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .tree {
   flex: none;
   width: 280px;
@@ -180,10 +177,7 @@ input[type="text"], input[type="password"], select {
   max-width: 60vw;
   resize: horizontal;
   overflow: auto;
-  /* full height and its own scrolling, it stays put while the chat scrolls */
-  position: sticky;
-  top: 44px;
-  height: calc(100vh - 180px);
+  margin-bottom: 20px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -265,12 +259,12 @@ input[type="text"], input[type="password"], select {
 .tree .node.active { font-weight: 650; background: var(--green-soft); }
 @media (max-width: 720px) {
   .session-body { flex-direction: column-reverse; }
-  .tree { position: static; width: 100%; max-width: none; height: auto; max-height: 40vh; resize: vertical; }
+  .tree { width: 100%; max-width: none; max-height: 40vh; margin-bottom: 0; resize: vertical; }
 }
 .session-title { font-weight: 650; }
 .situation { color: var(--muted); font-size: .95rem; }
 
-.chat { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 16px; }
+.chat { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 8px 6px 16px 0; }
 
 .msg { max-width: 82%; padding: 10px 14px; border-radius: var(--radius); box-shadow: var(--shadow); }
 .msg p { margin: 0; }
@@ -342,11 +336,7 @@ input[type="text"], input[type="password"], select {
 .composer {
   display: flex;
   gap: 10px;
-  position: sticky;
-  bottom: -28px;
-  background: var(--bg);
   padding: 12px 0 20px;
-  margin-bottom: -28px;
 }
 .composer input { font-size: 1.05rem; padding: 12px 14px; }
 

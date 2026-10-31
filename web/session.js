@@ -12,7 +12,7 @@ import { createTreeView } from "./tree-view.js";
 
 const input = $("#input");
 const sendButton = $("#composer button");
-const view = createChatView($("#chat"), $("#tab-tutor"), {
+const view = createChatView($("#chat"), $("#chat"), {
   onRewind: rewindTo,
   onOtherReply: otherReply,
   onShowBranch: showBranch,
