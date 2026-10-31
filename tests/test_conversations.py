@@ -2,8 +2,10 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
-from tutor.conversations import ConversationStore
+from tutor.conversations import VERSION, ConversationStore, upgraded
+from tutor.errors import TutorError
 from tutor.models import Node
 
 FIRST = "11111111-1111-1111-1111-111111111111"
@@ -18,12 +20,57 @@ def conversation(title: str, lines: int = 1) -> dict:
     }
 
 
+def valid(**changes) -> dict:
+    return {
+        "title": "Bar",
+        "scenario": {"title": "Bar", "brief": ""},
+        "situation": "",
+        "target_language": "it",
+        "created": "2026-10-31T00:00:00Z",
+        "nodes": [{"id": "n1", "role": "tutor", "text": "Buongiorno!"}],
+        "active": "n1",
+        **changes,
+    }
+
+
+class UpgradeTest(unittest.TestCase):
+    def test_a_file_from_before_versions_opens_in_the_current_format(self):
+        self.assertEqual(upgraded(valid())["version"], VERSION)
+
+    def test_upgrades_run_step_by_step_from_the_version_of_the_file(self):
+        steps = {0: lambda c: {**c, "title": c["title"] + " 1"}, 1: lambda c: {**c, "title": c["title"] + " 2"}}
+        with mock.patch("tutor.conversations.VERSION", 2), mock.patch("tutor.conversations.UPGRADES", steps):
+            self.assertEqual(upgraded(valid())["title"], "Bar 1 2")
+            self.assertEqual(upgraded(valid(version=1))["title"], "Bar 2")
+
+    def test_a_file_from_a_newer_app_is_refused(self):
+        with self.assertRaisesRegex(TutorError, "newer version"):
+            upgraded(valid(version=VERSION + 1))
+
+    def test_a_damaged_file_gets_a_clear_message(self):
+        damaged = [
+            valid(nodes=[]),
+            valid(nodes="many"),
+            valid(version="one"),
+            valid(version=-1),
+            valid(nodes=[{"id": "n1", "parent": "gone", "role": "tutor", "text": "Ciao"}]),
+            {"title": "only a title"},
+        ]
+        for conversation in damaged:
+            with self.subTest(conversation), self.assertRaisesRegex(TutorError, "damaged"):
+                upgraded(conversation)
+
+
 class ConversationStoreTest(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         self.folder = Path(folder.name) / "conversations"
         self.store = ConversationStore(self.folder)
+
+    def test_every_save_writes_the_version(self):
+        self.assertEqual(self.store.save(FIRST, conversation("Bar"))["version"], VERSION)
+        self.assertEqual(self.store.load(FIRST)["version"], VERSION)
 
     def test_empty_before_anything_is_saved(self):
         self.assertEqual(self.store.list_all(), [])

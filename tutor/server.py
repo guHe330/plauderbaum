@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__, roleplay
-from .conversations import ConversationStore
+from .conversations import ConversationStore, upgraded
 from .errors import TutorError
 from .keychain import KeyStore, KeyStoreError, SystemKeyStore
 from .llm import local, openrouter
@@ -185,7 +185,7 @@ def conversation_routes(conversations: ConversationStore) -> APIRouter:
         conversation = conversations.load(conversation_id)
         if conversation is None:
             raise HTTPException(status_code=404, detail="This conversation no longer exists.")
-        return conversation
+        return upgraded(conversation)
 
     @router.put("/conversations/{conversation_id}")
     def put_conversation(conversation_id: ConversationId, conversation: Conversation):

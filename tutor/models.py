@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Role = Literal["tutor", "learner"]
 
@@ -81,3 +81,10 @@ class Conversation(BaseModel):
     created: str = Field(max_length=40)
     nodes: list[Node] = Field(min_length=1)
     active: str = Field(max_length=20)
+
+    @model_validator(mode="after")
+    def parents_exist(self) -> "Conversation":
+        ids = {node.id for node in self.nodes}
+        if any(node.parent is not None and node.parent not in ids for node in self.nodes):
+            raise ValueError("A line refers to a parent that does not exist.")
+        return self
