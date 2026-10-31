@@ -1,7 +1,7 @@
 // The Settings tab.
 import { api } from "./api.js";
-import { $, toast } from "./dom.js";
-import { onLeavingSettings, showTab } from "./navigation.js";
+import { $, ask, toast } from "./dom.js";
+import { onLeavingSettings } from "./navigation.js";
 import { sayIn } from "./speech.js";
 import { state, targetName } from "./state.js";
 
@@ -151,16 +151,26 @@ export function initSettings({ settings, languages, models }) {
   return loadVoices(settings.target_language, settings.voice);
 }
 
-onLeavingSettings(() => {
-  if (!unsaved) return;
-  if (!confirm("Save your changes to Settings? Cancel discards them.")) {
+onLeavingSettings(async () => {
+  if (!unsaved) return true;
+  const answer = await ask("You have unsaved changes in Settings.", [
+    { label: "Stay", value: "stay", className: "secondary" },
+    { label: "Discard", value: "discard", className: "secondary" },
+    { label: "Save", value: "save" },
+  ]);
+  if (answer === "discard") {
     discardChanges();
-    return;
+    return true;
   }
-  saveSettings().then(() => toast("Saved"), (error) => {
+  if (answer !== "save") return false;
+  try {
+    await saveSettings();
+    toast("Saved");
+    return true;
+  } catch (error) {
     toast(error.message, true);
-    showTab("settings");
-  });
+    return false;
+  }
 });
 
 form.elements.provider.addEventListener("change", (event) => showProvider(event.target.value));

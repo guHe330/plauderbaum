@@ -371,4 +371,17 @@ input[type="text"], input[type="password"], select {
   box-shadow: var(--shadow);
   max-width: calc(100% - 40px);
 }
+.ask {
+  width: min(420px, calc(100% - 32px));
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.ask::backdrop { background: rgba(0, 0, 0, .4); }
+.ask p { margin: 0 0 16px; overflow-wrap: anywhere; }
+.ask-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+button.danger { background: var(--red); }
 .toast.error { background: var(--red); color: #fff; }
