@@ -1,6 +1,6 @@
 // The start page: scenarios, a topic of your own, and earlier conversations.
 import { api } from "./api.js";
-import { $, el, linkButton, toast } from "./dom.js";
+import { $, ask, el, linkButton, toast } from "./dom.js";
 import { showPage, showTab } from "./navigation.js";
 import { openConversation, startConversation } from "./session.js";
 import { say, setConversationVoice } from "./speech.js";
@@ -8,11 +8,10 @@ import { state } from "./state.js";
 import { deleteConversation, listConversations } from "./store.js";
 
 // Leave an open conversation (it is saved) and go back to the start page.
-export function showHome() {
-  if (state.busy) return;
+export async function showHome() {
+  if (state.busy || !(await showTab("tutor"))) return;
   say();
   setConversationVoice(null);
-  showTab("tutor");
   showPage("home");
   loadConversations();
 }
@@ -49,7 +48,12 @@ function savedRow(saved) {
 }
 
 async function removeConversation(saved) {
-  if (state.busy || !confirm(`Delete "${saved.title}" with all its branches?`)) return;
+  if (state.busy) return;
+  const answer = await ask(`Delete "${saved.title}" with all its branches?`, [
+    { label: "Cancel", value: "cancel", className: "secondary" },
+    { label: "Delete", value: "delete", className: "danger" },
+  ]);
+  if (answer !== "delete") return;
   try {
     await deleteConversation(saved.id);
   } catch (error) {

@@ -2,18 +2,20 @@
 // Tutor tab either the start page or an open conversation.
 import { $ } from "./dom.js";
 
-let beforeLeavingSettings = () => {};
+let mayLeaveSettings = async () => true;
 export function onLeavingSettings(check) {
-  beforeLeavingSettings = check;
+  mayLeaveSettings = check;
 }
 
-export function showTab(name) {
-  if (name !== "settings") beforeLeavingSettings();
+// Resolves to false if the learner chose to stay on Settings.
+export async function showTab(name) {
+  if (name !== "settings" && !(await mayLeaveSettings())) return false;
   for (const tab of document.querySelectorAll(".tabs button")) {
     tab.setAttribute("aria-selected", String(tab.dataset.tab === name));
   }
   $("#tab-tutor").hidden = name !== "tutor";
   $("#tab-settings").hidden = name !== "settings";
+  return true;
 }
 
 // `page` is "home" or "session".
