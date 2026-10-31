@@ -17,10 +17,10 @@ from . import __version__, roleplay
 from .conversations import ConversationStore
 from .errors import TutorError
 from .keychain import KeyStore, KeyStoreError, SystemKeyStore
-from .llm import openrouter
+from .llm import local, openrouter
 from .models import Conversation, ConversationRequest, ReplyRequest, StartRequest, TurnRequest
 from .paths import APP_NAME, ASSETS, WEB
-from .settings import LANGUAGES, MODELS, Settings, SettingsStore
+from .settings import LANGUAGES, MODELS, Settings, SettingsStore, checked_server
 from .speech import Speech
 
 ConversationId = Annotated[str, PathParam(pattern=r"^[0-9a-f-]{36}$")]
@@ -94,6 +94,20 @@ def settings_routes(settings: SettingsStore) -> APIRouter:
             return openrouter.structured_output_models()
         except (OSError, ValueError, KeyError):
             raise HTTPException(status_code=502, detail="Could not load the OpenRouter model list.")
+
+    @router.get("/local-models")
+    def get_local_models(server: str):
+        try:
+            server = checked_server(server)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error))
+        # The address comes from the request, so the token only goes to the saved server.
+        current = settings.load()
+        token = current.local_token if server == current.local_server else ""
+        try:
+            return local.models(server, token)
+        except (OSError, ValueError, KeyError, TypeError):
+            raise HTTPException(status_code=502, detail=f"Could not reach {server}. Is Ollama or LM Studio running?")
 
     return router
 

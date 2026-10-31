@@ -22,7 +22,7 @@
   <main>
     <section id="tab-tutor">
       <div id="no-key" class="notice" hidden>
-        To start, add your API key in <a href="#" data-goto="settings">Settings</a>.
+        To start, add your API key or choose a local model in <a href="#" data-goto="settings">Settings</a>.
       </div>
 
       <div id="picker">
@@ -72,6 +72,7 @@
             <select name="provider">
               <option value="anthropic">Anthropic (Claude, direct)</option>
               <option value="openrouter">OpenRouter (any model)</option>
+              <option value="local">Local (Ollama or LM Studio)</option>
             </select>
           </label>
           <div data-provider="anthropic">
@@ -92,6 +93,22 @@
               <input name="openrouter_model" type="text" list="openrouter-models" maxlength="100" autocomplete="off" spellcheck="false" placeholder="e.g. anthropic/claude-sonnet-5.5">
               <datalist id="openrouter-models"></datalist>
               <small>Any model id from openrouter.ai/models. Weaker models give weaker corrections.</small>
+            </label>
+          </div>
+          <div data-provider="local" hidden>
+            <label>Server
+              <input name="local_server" type="url" maxlength="200" autocomplete="off" spellcheck="false" placeholder="http://localhost:11434">
+              <small>Ollama listens on http://localhost:11434, LM Studio on http://localhost:1234. Conversations stay on this computer.</small>
+            </label>
+            <label>API token (optional)
+              <input name="local_token" type="password" autocomplete="off">
+              <small id="local-token-status"></small>
+            </label>
+            <button type="button" id="save-local-token" hidden>Save token</button>
+            <button type="button" id="remove-local-token" class="secondary" hidden>Remove token</button>
+            <label>Model
+              <select name="local_model"></select>
+              <small id="local-models-status"></small>
             </label>
           </div>
         </fieldset>

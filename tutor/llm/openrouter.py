@@ -18,14 +18,27 @@ def complete(settings: Settings, system: str, user: str, schema: dict) -> str:
         raise TutorError("No API key yet. Add your OpenRouter API key in Settings.")
     if not settings.openrouter_model:
         raise TutorError("Choose an OpenRouter model in Settings.")
-    # Not every model behind OpenRouter enforces response_format, so the schema is
-    # also spelled out in the prompt.
+    headers = {"Authorization": f"Bearer {api_key}", "X-Title": APP_NAME}
+    try:
+        return chat(API, headers, settings.openrouter_model, system, user, schema, "OpenRouter")
+    except OSError:
+        raise TutorError("Could not reach OpenRouter. Check your internet connection.")
+
+
+def chat(api: str, headers: dict, model: str, system: str, user: str, schema: dict, who: str) -> str:
+    """One chat completion against an OpenAI-compatible API at `api`.
+
+    Returns the model's text. Raises OSError if the server cannot be reached and
+    TutorError, naming `who`, for anything else that goes wrong.
+    """
+    # Not every model enforces response_format, so the schema is also spelled
+    # out in the prompt.
     user += (
         "\n\nAnswer with a single JSON object and nothing else. It must match this JSON schema:\n"
         + json.dumps(schema)
     )
     body = {
-        "model": settings.openrouter_model,
+        "model": model,
         "max_tokens": 8000,
         "messages": [
             {"role": "system", "content": system},
@@ -37,26 +50,21 @@ def complete(settings: Settings, system: str, user: str, schema: dict) -> str:
         },
     }
     request = urllib.request.Request(
-        f"{API}/chat/completions",
+        f"{api}/chat/completions",
         data=json.dumps(body).encode(),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "X-Title": APP_NAME,
-        },
+        headers={**headers, "Content-Type": "application/json"},
     )
     try:
-        with urllib.request.urlopen(request, timeout=120) as response:
+        # Long: a local model on a slow machine may take minutes.
+        with urllib.request.urlopen(request, timeout=300) as response:
             status, raw = response.status, response.read()
     except urllib.error.HTTPError as e:
         status, raw = e.code, e.read()
-    except OSError:
-        raise TutorError("Could not reach OpenRouter. Check your internet connection.")
-    return read_completion(status, raw)
+    return read_completion(status, raw, who)
 
 
-def read_completion(status: int, raw: bytes) -> str:
-    """The model's text from a chat completion response, or TutorError."""
+def read_completion(status: int, raw: bytes, who: str = "OpenRouter") -> str:
+    """The model's text from a chat completion response, or TutorError naming `who`."""
     try:
         data = json.loads(raw)
     except ValueError:
@@ -68,18 +76,20 @@ def read_completion(status: int, raw: bytes) -> str:
     if isinstance(error, dict) and isinstance(error.get("code"), int):
         status = error["code"]
     if status == 401:
-        raise TutorError("The OpenRouter API key was rejected. Check it in Settings.")
+        raise TutorError(f"The {who} API key was rejected. Check it in Settings.")
     if status == 402:
-        raise TutorError("Your OpenRouter credit is used up.")
+        raise TutorError(f"Your {who} credit is used up.")
     if status == 429:
         raise TutorError("Rate limit reached. Wait a moment and try again.")
     if error or status >= 400:
         message = error.get("message") if isinstance(error, dict) else None
-        raise TutorError(f"OpenRouter error ({status}): {message or 'no details given'}")
+        raise TutorError(f"{who} error ({status}): {message or 'no details given'}")
     choice = (data.get("choices") or [{}])[0]
     if choice.get("finish_reason") == "length":
         raise TutorError("The answer was cut off. Try again.")
-    return (choice.get("message") or {}).get("content") or ""
+    message = choice.get("message") or {}
+    # Some local reasoning models put the whole answer in the reasoning field.
+    return message.get("content") or message.get("reasoning_content") or ""
 
 
 @functools.cache

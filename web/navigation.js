@@ -2,7 +2,13 @@
 // Tutor tab either the start page or an open conversation.
 import { $ } from "./dom.js";
 
+let beforeLeavingSettings = () => {};
+export function onLeavingSettings(check) {
+  beforeLeavingSettings = check;
+}
+
 export function showTab(name) {
+  if (name !== "settings") beforeLeavingSettings();
   for (const tab of document.querySelectorAll(".tabs button")) {
     tab.setAttribute("aria-selected", String(tab.dataset.tab === name));
   }

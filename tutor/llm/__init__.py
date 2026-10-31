@@ -6,12 +6,13 @@ the answer.
 """
 
 from ..settings import Settings
-from . import claude, openrouter
+from . import claude, local, openrouter
 from .answer import parse_answer
 
 PROVIDERS = {
     "anthropic": claude.complete,
     "openrouter": openrouter.complete,
+    "local": local.complete,
 }
 
 
